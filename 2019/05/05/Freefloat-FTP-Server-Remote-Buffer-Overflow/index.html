@@ -96,20 +96,20 @@
 <meta property="og:site_name" content="Even-Want">
 <meta property="og:description" content="漏洞分析漏洞成因修改payload为500长度的A，查看栈回溯锁定00401dfe这个地址，使用ida查看能够看到程序使用了recv函数来接收数据，其中edx所指向的地址就是存放数据的缓冲区。从payload来看，我们传入的恶意参数在第三次传输过程中。因此我们在windbg中需要执行三次g命令才能到达所在位置，确定缓冲区所在的地址。能够看到此时栈上的第二个地址就是缓冲区所在的地址，也就是recv函">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/1.png">
-<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/2.png">
-<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/3.png">
-<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/4.png">
-<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/5.png">
-<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/6.png">
-<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/7.png">
-<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/8.png">
-<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/9.png">
-<meta property="og:updated_time" content="2019-05-05T06:19:16.680Z">
+<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/1.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/2.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/3.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/4.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/5.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/6.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/7.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/8.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/9.PNG">
+<meta property="og:updated_time" content="2019-05-22T13:28:05.399Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Freefloat FTP Server Remote Buffer Overflow">
 <meta name="twitter:description" content="漏洞分析漏洞成因修改payload为500长度的A，查看栈回溯锁定00401dfe这个地址，使用ida查看能够看到程序使用了recv函数来接收数据，其中edx所指向的地址就是存放数据的缓冲区。从payload来看，我们传入的恶意参数在第三次传输过程中。因此我们在windbg中需要执行三次g命令才能到达所在位置，确定缓冲区所在的地址。能够看到此时栈上的第二个地址就是缓冲区所在的地址，也就是recv函">
-<meta name="twitter:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/1.png">
+<meta name="twitter:image" content="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/1.PNG">
 
 
 
@@ -414,8 +414,8 @@
       
 
       
-        <h2 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h2><h3 id="漏洞成因"><a href="#漏洞成因" class="headerlink" title="漏洞成因"></a>漏洞成因</h3><p>修改payload为500长度的<code>A</code>，查看栈回溯<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/1.png" alt="1"><br>锁定<code>00401dfe</code>这个地址，使用ida查看<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/2.png" alt="2"><br>能够看到程序使用了<code>recv</code>函数来接收数据，其中<code>edx</code>所指向的地址就是存放数据的缓冲区。从payload来看，我们传入的恶意参数在第三次传输过程中。因此我们在windbg中需要执行三次<code>g</code>命令才能到达所在位置，确定缓冲区所在的地址。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/3.png" alt="3"><br>能够看到此时栈上的第二个地址就是缓冲区所在的地址，也就是<code>recv</code>函数的第二个参数。接着单步步过，查看此时缓冲区的值。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/4.png" alt="4"><br>能看到我们传入的恶意数据已经进入了缓冲区，并且能看到此时是对应的<code>SIZE</code>参数，也就是说程序是在接收SIZE参数时出现了缓冲区溢出的问题。</p>
-<h3 id="漏洞触发点"><a href="#漏洞触发点" class="headerlink" title="漏洞触发点"></a>漏洞触发点</h3><p>紧接着上面的步骤，继续单步调试。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/5.png" alt="5"><br>在<code>00403065</code>处，程序调用了<code>sub_4020e0</code>函数，之后地址变为了<code>41414141</code>，跟入函数，继续单步。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/6.png" alt="6"><br>相同的情况发生在<code>0040213a</code>处，程序调用的是<code>sub_402190</code>函数，继续跟入。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/7.png" alt="7"><br><code>004028ed</code>之后，程序出错。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/8.png" alt="8"><br>能够看到，在<code>sub_402de0</code>函数结束返回的时候，程序出现了错误。<br>查看此时栈上的值，发现此时已经布满了我们输入的数据。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/9.png" alt="9"><br>说明漏洞的触发点是在<code>402ebb</code>这个地址，也就是<code>sub_402de0</code>函数返回处。</p>
+        <h2 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h2><h3 id="漏洞成因"><a href="#漏洞成因" class="headerlink" title="漏洞成因"></a>漏洞成因</h3><p>修改payload为500长度的<code>A</code>，查看栈回溯<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/1.PNG" alt="1"><br>锁定<code>00401dfe</code>这个地址，使用ida查看<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/2.PNG" alt="2"><br>能够看到程序使用了<code>recv</code>函数来接收数据，其中<code>edx</code>所指向的地址就是存放数据的缓冲区。从payload来看，我们传入的恶意参数在第三次传输过程中。因此我们在windbg中需要执行三次<code>g</code>命令才能到达所在位置，确定缓冲区所在的地址。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/3.PNG" alt="3"><br>能够看到此时栈上的第二个地址就是缓冲区所在的地址，也就是<code>recv</code>函数的第二个参数。接着单步步过，查看此时缓冲区的值。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/4.PNG" alt="4"><br>能看到我们传入的恶意数据已经进入了缓冲区，并且能看到此时是对应的<code>SIZE</code>参数，也就是说程序是在接收SIZE参数时出现了缓冲区溢出的问题。</p>
+<h3 id="漏洞触发点"><a href="#漏洞触发点" class="headerlink" title="漏洞触发点"></a>漏洞触发点</h3><p>紧接着上面的步骤，继续单步调试。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/5.PNG" alt="5"><br>在<code>00403065</code>处，程序调用了<code>sub_4020e0</code>函数，之后地址变为了<code>41414141</code>，跟入函数，继续单步。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/6.PNG" alt="6"><br>相同的情况发生在<code>0040213a</code>处，程序调用的是<code>sub_402190</code>函数，继续跟入。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/7.PNG" alt="7"><br><code>004028ed</code>之后，程序出错。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/8.PNG" alt="8"><br>能够看到，在<code>sub_402de0</code>函数结束返回的时候，程序出现了错误。<br>查看此时栈上的值，发现此时已经布满了我们输入的数据。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/9.PNG" alt="9"><br>说明漏洞的触发点是在<code>402ebb</code>这个地址，也就是<code>sub_402de0</code>函数返回处。</p>
 
       
     </div>

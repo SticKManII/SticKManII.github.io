@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-corner-indicator.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="php,Directory Traversal,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Even-Want" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="漏洞复现 目录遍历?option=com_media&amp;amp;view=mediaList&amp;amp;tmpl=component&amp;amp;folder=/..    任意文件删除?option=com_media&amp;amp;task=folder.delete&amp;amp;tmpl=index&amp;amp;folder=%2F..&amp;amp;rm[]={要删除的文件} 漏洞分析  目录遍历分析/adminis">
+<meta name="keywords" content="php,Directory Traversal">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Joomla Core 1.5.0 - 3.9.4 - Directory Traversal &#x2F; Authenticated Arbitrary File Deletion分析">
+<meta property="og:url" content="http://yoursite.com/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/index.html">
+<meta property="og:site_name" content="Even-Want">
+<meta property="og:description" content="漏洞复现 目录遍历?option=com_media&amp;amp;view=mediaList&amp;amp;tmpl=component&amp;amp;folder=/..    任意文件删除?option=com_media&amp;amp;task=folder.delete&amp;amp;tmpl=index&amp;amp;folder=%2F..&amp;amp;rm[]={要删除的文件} 漏洞分析  目录遍历分析/adminis">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://yoursite.com/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/1.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/2.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/3.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/4.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/5.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/6.PNG">
+<meta property="og:updated_time" content="2019-04-29T05:44:09.415Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Joomla Core 1.5.0 - 3.9.4 - Directory Traversal &#x2F; Authenticated Arbitrary File Deletion分析">
+<meta name="twitter:description" content="漏洞复现 目录遍历?option=com_media&amp;amp;view=mediaList&amp;amp;tmpl=component&amp;amp;folder=/..    任意文件删除?option=com_media&amp;amp;task=folder.delete&amp;amp;tmpl=index&amp;amp;folder=%2F..&amp;amp;rm[]={要删除的文件} 漏洞分析  目录遍历分析/adminis">
+<meta name="twitter:image" content="http://yoursite.com/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/1.PNG">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/">
+
+
+
+
+
+  <title>Joomla Core 1.5.0 - 3.9.4 - Directory Traversal / Authenticated Arbitrary File Deletion分析 | Even-Want</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+   
+<script type="text/javascript" src="//cdn.bootcss.com/canvas-nest.js/1.0.0/canvas-nest.min.js"></script>
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+    <a href="https://github.com/SticKManII" class="github-corner" aria-label="View source on Github"><svg width="80" height="80" viewbox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Even-Want</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Even-Want">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/image/lf.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Even-Want">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Joomla Core 1.5.0 - 3.9.4 - Directory Traversal / Authenticated Arbitrary File Deletion分析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-04-29T13:39:13+08:00">
+                2019-04-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  1,152
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  6
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="漏洞复现"><a href="#漏洞复现" class="headerlink" title="漏洞复现"></a>漏洞复现</h2><ul>
+<li>目录遍历<br><code>?option=com_media&amp;view=mediaList&amp;tmpl=component&amp;folder=/..</code></li>
+</ul>
+<p><img src="/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/1.PNG" alt="1"></p>
+<ul>
+<li><p>任意文件删除<br><code>?option=com_media&amp;task=folder.delete&amp;tmpl=index&amp;folder=%2F..&amp;rm[]={要删除的文件}</code></p>
+<h2 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h2></li>
+</ul>
+<h3 id="目录遍历分析"><a href="#目录遍历分析" class="headerlink" title="目录遍历分析"></a>目录遍历分析</h3><p>/administrator/components/com_media/controller.php代码50行处</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public function display($cachable = false, $urlparams = false)</span><br><span class="line">&#123;</span><br><span class="line">	JPluginHelper::importPlugin(&apos;content&apos;);</span><br><span class="line">	$vType    = JFactory::getDocument()-&gt;getType();</span><br><span class="line">	$vName    = $this-&gt;input-&gt;get(&apos;view&apos;, &apos;media&apos;);</span><br><span class="line">			switch ($vName)</span><br><span class="line">	&#123;</span><br><span class="line">	......</span><br><span class="line">				case &apos;mediaList&apos;:</span><br><span class="line">			$app     = JFactory::getApplication();</span><br><span class="line">			$mName   = &apos;list&apos;;</span><br><span class="line">			$vLayout = $app-&gt;getUserStateFromRequest(&apos;media.list.layout&apos;, &apos;layout&apos;, &apos;thumbs&apos;, &apos;word&apos;);</span><br><span class="line"></span><br><span class="line">			break;</span><br><span class="line">	......</span><br></pre></td></tr></table></figure>
+<p>能看到程序根据接收到的<code>view</code>参数会进入到<code>mediaList</code>处理中。<br>而之后的80行中，程序会调用<code>$view-&gt;display();</code>来进行页面的展示。跟入此函数中。</p>
+<p>/administrator/components/com_media/views/medialist/view.html.php代码28-44行<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public function display($tpl = null)</span><br><span class="line">&#123;</span><br><span class="line">	$app = JFactory::getApplication();</span><br><span class="line">	if (!$app-&gt;isClient(&apos;administrator&apos;))</span><br><span class="line">	&#123;</span><br><span class="line">		return $app-&gt;enqueueMessage(JText::_(&apos;JERROR_ALERTNOAUTHOR&apos;), &apos;warning&apos;);</span><br><span class="line">	&#125;</span><br><span class="line">	// Do not allow cache</span><br><span class="line">	$app-&gt;allowCache(false);</span><br><span class="line">	$this-&gt;images    = $this-&gt;get(&apos;images&apos;);</span><br><span class="line">	$this-&gt;documents = $this-&gt;get(&apos;documents&apos;);</span><br><span class="line">	$this-&gt;folders   = $this-&gt;get(&apos;folders&apos;);</span><br><span class="line">	$this-&gt;videos    = $this-&gt;get(&apos;videos&apos;);</span><br><span class="line">	$this-&gt;state     = $this-&gt;get(&apos;state&apos;);</span><br><span class="line">	......</span><br></pre></td></tr></table></figure></p>
+<p>能够看到程序会使用<code>$this-&gt;get(&#39;folders&#39;)</code>这种形式来获取对应参数的值，继续跟入get函数。</p>
+<p>/libraies/src/MVC/View/HtmlView.php代码403-429行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">public function get($property, $default = null)</span><br><span class="line">&#123;</span><br><span class="line">	// If $model is null we use the default model</span><br><span class="line">	if ($default === null)</span><br><span class="line">	&#123;</span><br><span class="line">		$model = $this-&gt;_defaultModel;</span><br><span class="line">	&#125;</span><br><span class="line">	else</span><br><span class="line">	&#123;</span><br><span class="line">		$model = strtolower($default);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	// First check to make sure the model requested exists</span><br><span class="line">	if (isset($this-&gt;_models[$model]))</span><br><span class="line">	&#123;</span><br><span class="line">		// Model exists, let&apos;s build the method name</span><br><span class="line">		$method = &apos;get&apos; . ucfirst($property);</span><br><span class="line"></span><br><span class="line">		// Does the method exist?</span><br><span class="line">		if (method_exists($this-&gt;_models[$model], $method))</span><br><span class="line">		&#123;</span><br><span class="line">			// The method exists, let&apos;s call it and return what we get</span><br><span class="line">			$result = $this-&gt;_models[$model]-&gt;$method();</span><br><span class="line"></span><br><span class="line">			return $result;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/2.PNG" alt="2"><br>在最后<code>$result</code>的值由对应<code>_models[$model]</code>中的<code>$method</code>方法决定，此处会进入<code>getimages</code>函数，继续单步跟入。<br>/administrator/components/com_media/models/list.php代码58-63行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public function getImages()</span><br><span class="line">&#123;</span><br><span class="line">	$list = $this-&gt;getList();</span><br><span class="line"></span><br><span class="line">	return $list[&apos;images&apos;];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>程序调用<code>getList</code>函数获取list列表，然后从列表中获取images的值并返回，继续跟入。<br>/administrator/components/com_media/models/list.php代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">public function getList()</span><br><span class="line">&#123;</span><br><span class="line">	static $list;</span><br><span class="line">	......</span><br><span class="line">	// Get current path from request</span><br><span class="line">	$current = (string) $this-&gt;getState(&apos;folder&apos;);</span><br><span class="line">	$basePath  = COM_MEDIA_BASE . ((strlen($current) &gt; 0) ? &apos;/&apos; . $current : &apos;&apos;);</span><br><span class="line">	$mediaBase = str_replace(DIRECTORY_SEPARATOR, &apos;/&apos;, COM_MEDIA_BASE . &apos;/&apos;);</span><br><span class="line">	......</span><br><span class="line">	$fileList   = false;</span><br><span class="line">	$folderList = false;</span><br><span class="line"></span><br><span class="line">	if (file_exists($basePath))</span><br><span class="line">	&#123;</span><br><span class="line">		// Get the list of files and folders from the given folder</span><br><span class="line">		$fileList   = JFolder::files($basePath);</span><br><span class="line">		$folderList = JFolder::folders($basePath);</span><br><span class="line">	&#125;</span><br><span class="line">	......</span><br><span class="line">	$list = array(&apos;folders&apos; =&gt; $folders, &apos;docs&apos; =&gt; $docs, &apos;images&apos; =&gt; $images, &apos;videos&apos; =&gt; $videos);</span><br></pre></td></tr></table></figure>
+<p><code>$current</code>为当前相对路径的值，而<code>$basePath</code>为当前绝对路径的值,<code>JFolder::files</code>和<code>JFolder::folders</code>分别获取对应路径下的文件名与文件夹名，之后程序会根据后缀名等信息划分<code>folders</code>、<code>docs</code>、<code>images</code>等，并最终放入<code>list</code>数组。之后<code>list</code>数组会作为结果传递给<code>$this-&gt;folders</code>,最终作为数据渲染页面。</p>
+<p>而其实<code>$current</code>的值是有所过滤的，单步跟入getState函数<br><img src="/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/3.PNG" alt="3"><br>继续跟入get函数<br><img src="/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/4.PNG" alt="4"><br>程序会调用<code>clean</code>函数，对数据进行过滤，继续跟入<br>/libraries/vendor/joomla/filter/src/InputFilter.php代码434-454行<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">case &apos;PATH&apos;:</span><br><span class="line">	$pattern = &apos;/^[A-Za-z0-9_\/-]+[A-Za-z0-9_\.-]*([\\\\\/][A-Za-z0-9_-]+[A-Za-z0-9_\.-]*)*$/&apos;;</span><br><span class="line"></span><br><span class="line">	if (is_array($source))</span><br><span class="line">	&#123;</span><br><span class="line">		$result = array();</span><br><span class="line"></span><br><span class="line">		// Iterate through the array</span><br><span class="line">		foreach ($source as $eachString)</span><br><span class="line">		&#123;</span><br><span class="line">			preg_match($pattern, (string) $eachString, $matches);</span><br><span class="line">			$result[] = isset($matches[0]) ? (string) $matches[0] : &apos;&apos;;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	else</span><br><span class="line">	&#123;</span><br><span class="line">		preg_match($pattern, $source, $matches);</span><br><span class="line">		$result = isset($matches[0]) ? (string) $matches[0] : &apos;&apos;;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	break;</span><br></pre></td></tr></table></figure></p>
+<p>对于PATH路径，程序会使用正则去匹配，从正则中我们也能看出，我们能够使正则匹配到/..,却无法使正则匹配到/../..这种，因此我们只能返回到主目录，却不能继续往上。<br>而在/libraries/src/Filesystem/Path.php中，<code>$path = preg_replace(&#39;#[/\\\\]+#&#39;, $ds, $path);</code>会使类似于<code>images//..</code>转换为<code>images\..</code>,从而使得能使用<code>readdir</code>函数读取对应路径下的内容。</p>
+<h3 id="任意文件删除分析"><a href="#任意文件删除分析" class="headerlink" title="任意文件删除分析"></a>任意文件删除分析</h3><p><img src="/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/5.PNG" alt="5"><br>与之有关的函数位于/administrator/components/com_media/controllers/folder.php<br><code>$folder</code>的值与上面的分析相同，依旧使<code>/..</code>,<code>$path</code>的值则为我们输入的要删除的文件名<br><img src="/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/6.PNG" alt="6"><br>而在之后的代码中，会根据<code>$folder</code>与<code>$path</code>获取到<code>$fulpath</code>的值。在108行代码处，会调用删除函数。<br><code>$ret &amp;= JFile::delete($object_file-&gt;filepath);</code><br>接着跟入</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">$file = $pathObject-&gt;clean($file);</span><br><span class="line">if (!is_file($file))</span><br><span class="line">&#123;</span><br><span class="line">	continue;</span><br><span class="line">&#125;</span><br><span class="line">// Try making the file writable first. If it&apos;s read-only, it can&apos;t be deleted</span><br><span class="line">// on Windows, even if the parent folder is writable</span><br><span class="line">@chmod($file, 0777);</span><br><span class="line">// In case of restricted permissions we zap it one way or the other</span><br><span class="line">// as long as the owner is either the webserver or the ftp</span><br><span class="line">if (@unlink($file))</span><br><span class="line">&#123;</span><br><span class="line">	// Do nothing</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>clean</code>函数会使得<code>$file</code>中的<code>/..</code>转换为<code>\..</code>,使得<code>unlink</code>函数能够顺利删除对应文件。</p>
+<h3 id="局限性"><a href="#局限性" class="headerlink" title="局限性"></a>局限性</h3><ul>
+<li>属于后台漏洞，需要知道管理员账户和密码。</li>
+<li>目录穿越最多只能到网站根目录，并不是真正的目录穿越以及任意文件删除。</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+	
+    <div>
+  
+    
+<div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+
+  
+    </div>
+	
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/php-Directory-Traversal/" rel="tag"><i class="fa fa-tag"></i> php,Directory Traversal</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/04/25/WinaXe-7-7-FTP-Client-Remote-Buffer-Overflow/" rel="next" title="WinaXe 7.7 FTP Client - Remote Buffer Overflow">
+                <i class="fa fa-chevron-left"></i> WinaXe 7.7 FTP Client - Remote Buffer Overflow
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/04/29/SQL注入之基于运行错误/" rel="prev" title="SQL注入之基于运行错误">
+                SQL注入之基于运行错误 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zMzM3Mi85OTI4"></div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/image/lf.jpeg" alt="Even-Want">
+            
+              <p class="site-author-name" itemprop="name">Even-Want</p>
+              <p class="site-description motion-element" itemprop="description">安全小白,目前web、系统双管齐下，喜欢代码审计、python、pwn、渗透</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+
+          
+          
+
+          
+          
+<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="330" height="86" src="//music.163.com/outchain/player?type=2&id=29816800&auto=1&height=66"></iframe>
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#漏洞复现"><span class="nav-number">1.</span> <span class="nav-text">漏洞复现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#漏洞分析"><span class="nav-number">2.</span> <span class="nav-text">漏洞分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#目录遍历分析"><span class="nav-number">2.1.</span> <span class="nav-text">目录遍历分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#任意文件删除分析"><span class="nav-number">2.2.</span> <span class="nav-text">任意文件删除分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#局限性"><span class="nav-number">2.3.</span> <span class="nav-text">局限性</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Even-Want</span>
+
+  
+</div>
+
+
+<div class="powered-by">
+<i class="fa fa-user-md"></i><span id="busuanzi_container_site_uv">
+  本站访客数:<span id="busuanzi_value_site_uv"></span>
+</span>
+</div>
+
+  
+
+
+
+
+
+
+
+  
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":"wanko","bottom":-30,"mobileShow":false,"tagMode":true,"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/"});</script>
+</body>
+</html>
+<script type="text/javascript" src="/js/src/love.js"></script>

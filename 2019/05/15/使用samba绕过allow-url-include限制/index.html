@@ -96,13 +96,13 @@
 <meta property="og:site_name" content="Even-Want">
 <meta property="og:description" content="前言前不久在知识星球看到了好玩的东西，能够在allow_url_include参数为off的情况下，远程包含文件。所利用的是samba服务，今天就来自己复现一下。 简单复现samba服务器搭建 这里我使用的是ubuntu，直接可以使用命令进行安装。 sudo apt-get install samba  需要创建一个目录作为smb服务的目录。 sudo mkdir /var/www/html/te">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:image" content="http://yoursite.com/2019/05/15/使用samba绕过allow-url-include限制/1.png">
-<meta property="og:image" content="http://yoursite.com/2019/05/15/使用samba绕过allow-url-include限制/2.png">
-<meta property="og:updated_time" content="2019-05-15T09:39:36.963Z">
+<meta property="og:image" content="http://yoursite.com/2019/05/15/使用samba绕过allow-url-include限制/1.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/15/使用samba绕过allow-url-include限制/2.PNG">
+<meta property="og:updated_time" content="2019-05-22T13:48:18.867Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="使用samba绕过allow_url_include限制">
 <meta name="twitter:description" content="前言前不久在知识星球看到了好玩的东西，能够在allow_url_include参数为off的情况下，远程包含文件。所利用的是samba服务，今天就来自己复现一下。 简单复现samba服务器搭建 这里我使用的是ubuntu，直接可以使用命令进行安装。 sudo apt-get install samba  需要创建一个目录作为smb服务的目录。 sudo mkdir /var/www/html/te">
-<meta name="twitter:image" content="http://yoursite.com/2019/05/15/使用samba绕过allow-url-include限制/1.png">
+<meta name="twitter:image" content="http://yoursite.com/2019/05/15/使用samba绕过allow-url-include限制/1.PNG">
 
 
 
@@ -422,10 +422,10 @@
 <ol start="5">
 <li>重启smb服务<br> <code>sudo service smbd restart</code></li>
 </ol>
-<p>然后我们就能使用对应ip去访问这个共享的目录。<br><img src="/2019/05/15/使用samba绕过allow-url-include限制/1.png" alt="1"></p>
+<p>然后我们就能使用对应ip去访问这个共享的目录。<br><img src="/2019/05/15/使用samba绕过allow-url-include限制/1.PNG" alt="1"></p>
 <h3 id="远程包含文件"><a href="#远程包含文件" class="headerlink" title="远程包含文件"></a>远程包含文件</h3><p>实验的时候要先确保将<code>allow_url_include</code>参数值修改为<code>off</code>。<br>然后创建一个简单的demo</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">include $_GET[&apos;a&apos;];</span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
-<p>接着在实验机中的test目录下放入phpinfo文件，包含该文件。<br><img src="/2019/05/15/使用samba绕过allow-url-include限制/2.png" alt="2"><br>能看到确实已经远程包含了phpinfo文件。<br>同理，<code>require</code>等函数也可以这样利用。</p>
+<p>接着在实验机中的test目录下放入phpinfo文件，包含该文件。<br><img src="/2019/05/15/使用samba绕过allow-url-include限制/2.PNG" alt="2"><br>能看到确实已经远程包含了phpinfo文件。<br>同理，<code>require</code>等函数也可以这样利用。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这个虽然看上去挺厉害的， 但是实际上，smb因为之前的漏洞，对应的端口已经被封光了，很难应用到实际中。但是其他的像<code>webdav</code>这种同理也是可以被包含，利用的价值更大。</p>
 
       

